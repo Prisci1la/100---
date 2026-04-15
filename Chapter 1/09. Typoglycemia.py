@@ -22,3 +22,5 @@ words = text.split()
 print(words)
 result_09 = " ".join(shuffle_word(w) for w in words)
 print("09:", result_09)
+
+# couldn't believe could actually reading phenomenal power human

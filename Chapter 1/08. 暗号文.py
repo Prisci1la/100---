@@ -23,3 +23,6 @@ dec = cipher(enc)
 
 print("08-暗号化:", enc)
 print("08-復号化:", dec)
+
+# y = 219 - x
+# 219 - y = 219 - (219 - x) = x

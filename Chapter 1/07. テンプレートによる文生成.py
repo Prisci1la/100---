@@ -9,6 +9,7 @@
 # 用f-string
 
 def template(x, y, z):
-    return f"{x}時の{y}は{z}"   
+    return f"{x}時の{y}は{z}"   #f文字列 {}中の変数を文字列に入る
 
 print("07:", template(12, "气温", 22.4))
+

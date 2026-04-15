@@ -9,7 +9,7 @@
 # 用集合推导式生成bi-gram
 
 def bigram(s):
-    return {s[i:i+2] for i in range(len(s)-1)}  
+    return {s[i:i+2] for i in range(len(s)-1)}  #{}:set 1回だけ表示される
 
 X = bigram("paraparaparadise") # 1つ目の文字列
 Y = bigram("paragraph")        # 2つ目の文字列
@@ -20,3 +20,6 @@ print("06-差集:", X - Y)   # 差集
 
 print("06-se in X:", "se" in X)  
 print("06-se in Y:", "se" in Y)
+
+# A:{'ar', 'di', 'pa', 'se', 'ra', 'ad', 'ap', 'is'}
+# B:{'ar', 'pa', 'ph', 'ra', 'gr', 'ap', 'ag'}
