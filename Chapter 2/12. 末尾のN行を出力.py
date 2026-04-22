@@ -13,3 +13,14 @@ with open(filename, "r", encoding="utf-8") as f:
 for line in lines[-10:]:
     # end="" 防止重复换行  end=""で改行の重複を防ぐ
     print(line, end="")
+
+'''Liam	M	19837	2018
+Noah	M	18267	2018
+William	M	14516	2018
+James	M	13525	2018
+Oliver	M	13389	2018
+Benjamin	M	13381	2018
+Elijah	M	12886	2018
+Lucas	M	12585	2018
+Mason	M	12435	2018
+Logan	M	12352	2018'''

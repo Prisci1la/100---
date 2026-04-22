@@ -16,3 +16,14 @@ for line in lines[:10]:
     
     # 输出第1列（名字）  第1列（名前）を出力する
     print(cols[0])
+
+'''Mary
+Anna
+Emma
+Elizabeth
+Minnie
+Margaret
+Ida
+Alice
+Bertha
+Sarah'''

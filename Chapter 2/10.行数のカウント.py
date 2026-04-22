@@ -11,3 +11,5 @@ with open(filename, "r", encoding="utf-8") as f:
 
 # 输出行数（列表长度就是行数）  行数を出力する（リストの長さがそのまま行数になる）
 print(len(lines))
+
+#2780
