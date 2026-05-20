@@ -24,7 +24,14 @@ def extract_category_names(text: str) -> list[str]:
     #   ]]            ← 固定
     pattern = re.compile(r"\[\[Category:([^|\]]+)(?:\|[^\]]*)?\]\]")
     return pattern.findall(text)
-
+'''
+[[Category: を見つける
+( で捕捉を開始
+[^|\]]+ — | や ] 以外の文字を1回以上マッチ（= カテゴリ名）
+) で捕捉を終了
+(?:\|[^\]]*)? — オプションで |ソート順 の部分をマッチ（捕捉しない）
+]] を見つける
+'''
 
 if __name__ == "__main__":
     # 本文取得 / 取得正文

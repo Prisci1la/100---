@@ -19,8 +19,16 @@ def extract_category_lines(text: str) -> list[str]:
     # [[Category:...]] を含む行にマッチ / 匹配包含 [[Category:...]] 的行
     pattern = re.compile(r"^.*\[\[Category:.*?\]\].*$", re.MULTILINE)
     return pattern.findall(text)
-
-
+'''
+^                     # 行の始まり
+.*                    # 任意の文字、何個でも（貪欲）
+\[\[                  # リテラル [[ （[ をエスケープが必要）
+Category:             # リテラル文字列 "Category:"
+.*?                   # 任意の文字、何個でも（非貪欲、できるだけ少なく）
+\]\]                  # リテラル ]] （] をエスケープが必要）
+.*                    # 任意の文字、何個でも（貪欲）
+$                     # 行の終わり
+'''
 if __name__ == "__main__":
     # イギリスの本文を読み込み / 读取英国的正文
     text = load_uk_article()

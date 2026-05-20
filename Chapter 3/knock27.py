@@ -35,6 +35,9 @@ def remove_internal_links(value: str) -> str:
 
     return re.sub(r"\[\[(.+?)\]\]", _replace, value)
 
+#\[\[        # リテラル [[
+#(.+?)       # キャプチャグループ 1: 任意の文字（非貪欲）
+#\]\]        # リテラル ]]
 
 def clean_basic_info(text: str) -> dict[str, str]:
     """

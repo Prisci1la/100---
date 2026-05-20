@@ -30,14 +30,27 @@ def remove_external_links(value: str) -> str:
     value = re.sub(r"\[https?://[^\]]+\]", "", value)
     return value
 
-
+'''
+\[                      # リテラル [
+https?://               # http または https
+[^\s\]]+                # スペースと ] 以外の文字（URL）
+\s+                     # スペース 1回以上
+([^\]]+)                # キャプチャグループ 1: ] 以外の文字（リンク文字）
+\]                      # リテラル ]
+'''
 def remove_file_refs(value: str) -> str:
     """
     [[ファイル:...]] / [[File:...]] / [[Image:...]] を除去する。
     移除文件引用。
     """
     return re.sub(r"\[\[(?:ファイル|File|Image):[^\]]+\]\]", "", value)
-
+'''
+\[\[                              # リテラル [[
+(?:ファイル|File|Image)          # 非キャプチャグループ：3つのうち1つ
+:                                 # リテラル :
+[^\]]+                            # ] 以外の文字（ファイル名）
+\]\]                              # リテラル ]]
+'''
 
 def remove_html_tags(value: str) -> str:
     """
@@ -49,7 +62,13 @@ def remove_html_tags(value: str) -> str:
     # 自己閉じタグや単独タグ / 自闭合或单独标签
     value = re.sub(r"<[^>]+/?>", "", value)
     return value
-
+'''
+<ref                    # リテラル <ref
+[^>]*                   # > 以外の文字（タグ属性、0回以上）
+>                       # リテラル >
+.*?                     # 任意の文字（非貪欲）
+</ref>                  # リテラル </ref>
+'''
 
 def remove_templates(value: str) -> str:
     """
@@ -72,7 +91,11 @@ def remove_templates(value: str) -> str:
         prev = value
         value = re.sub(r"\{\{([^{}]+?)\}\}", _replace, value)
     return value
-
+'''
+\{\{              # リテラル {{
+([^{}]+?)         # キャプチャグループ 1: テンプレート内容
+\}\}              # リテラル }}
+'''
 
 def clean_value(value: str) -> str:
     """

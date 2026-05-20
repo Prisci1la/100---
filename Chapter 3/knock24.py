@@ -25,7 +25,14 @@ def extract_media_files(text: str) -> list[str]:
     )
     return pattern.findall(text)
 
-
+'''
+\[\[                        # 字面量 [[
+(?:ファイル|File|Image)    # 非捕获组：ファイル または File または Image
+:                           # 字面量 :
+([^|\]]+?)                  # キャプチャグループ：| と ] 以外の文字（非貪欲）
+(?:\|.*?)?                  # 非捕获組：| で始まるパラメータ（0回または1回）
+\]\]                        # 字面量 ]]
+'''
 if __name__ == "__main__":
     # 本文取得 / 取得正文
     text = load_uk_article()

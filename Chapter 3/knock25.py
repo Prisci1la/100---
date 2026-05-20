@@ -41,13 +41,24 @@ def extract_basic_info(text: str) -> dict[str, str]:
         r"^\|([^=\s]+)\s*=\s*(.*?)(?=\n\|[^=\s]+\s*=|\Z)",
         re.MULTILINE | re.DOTALL,
     )
-
-    info: dict[str, str] = {}
-    for m in field_pattern.finditer(body):
-        key = m.group(1).strip()
-        value = m.group(2).strip()
-        info[key] = value
-    return info
+# ^                              # 行の始まり
+# \|                             # 字面量 |
+# ([^=\s]+)                      # キャプチャグループ 1: = とスペース以外の文字（パラメータ名）
+# \s*                            # スペース 0回以上
+# =                              # 字面量 =
+# \s*                            # スペース 0回以上
+# (.*?)                          # キャプチャグループ 2: 任意の文字（非貪欲、パラメータ値）
+# (?=                            # 正向先読み（これ以後の文字を消費しない）
+#   \n\|[^=\s]+\s*=             # 次の行の新しいパラメータ
+#   |                            # または
+#   \Z                           # 文字列末尾
+# )
+    info: dict[str, str] = {}  # 空の辞書を作成
+    for m in field_pattern.finditer(body):  # 各フィールドをマッチ
+        key = m.group(1).strip()  # パラメータ名を取得して余白を削除
+        value = m.group(2).strip()  # パラメータ値を取得して余白を削除
+        info[key] = value  # 辞書に追加
+    return info  # 辞書を返す
 
 
 if __name__ == "__main__":

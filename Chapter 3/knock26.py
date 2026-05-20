@@ -31,8 +31,8 @@ def clean_basic_info(text: str) -> dict[str, str]:
     基礎情報を抽出し、各値から強調マークアップを除去する。
     提取基础信息，并从每个值中移除强调标记。
     """
-    info = extract_basic_info(text)
-    return {k: remove_emphasis(v) for k, v in info.items()}
+    info = extract_basic_info(text)  # テンプレートから基礎情報を抽出
+    return {k: remove_emphasis(v) for k, v in info.items()}  # 各値から強調マークを除去して新しい辞書を返す
 
 
 if __name__ == "__main__":
