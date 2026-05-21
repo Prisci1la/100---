@@ -63,7 +63,7 @@ if __name__ == "__main__":
 
     # 基礎情報を取得（28 のクリーン版）/ 取得基础信息（28 的清理版）
     info = clean_basic_info(text)
-
+    print(info)
     # 「国旗画像」フィールド / "国旗画像" 字段
     flag_filename = info.get("国旗画像")
     if not flag_filename:
