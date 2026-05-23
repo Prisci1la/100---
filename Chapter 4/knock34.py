@@ -66,3 +66,6 @@ if __name__ == "__main__":
     text = load_text()
     for pred in extract_predicates_of_melos(text):
         print(pred)
+'''
+する
+'''

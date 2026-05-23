@@ -10,6 +10,10 @@ from collections import Counter
 import matplotlib.pyplot as plt
 from pathlib import Path
 
+# 设置字体支持中文和日文
+plt.rcParams['font.sans-serif'] = ['Hiragino Sans', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
+
 from knock36 import tokenize_corpus
 
 
@@ -20,15 +24,15 @@ def plot_zipf(output: str = "knock39_zipf.png") -> str:
     sorted_freq = sorted(freq.values(), reverse=True)
     ranks = range(1, len(sorted_freq) + 1)
 
-    plt.figure(figsize=(8, 6))
-    plt.loglog(ranks, sorted_freq, marker=".", linestyle="none", markersize=2)
-    plt.xlabel("Rank (順位 / 排名)")
-    plt.ylabel("Frequency (頻度 / 频率)")
-    plt.title("Zipf's Law / Zipfの法則")
-    plt.grid(True, which="both", linestyle="--", alpha=0.5)
+    plt.figure(figsize=(12, 8))
+    plt.loglog(ranks, sorted_freq, marker=".", linestyle="none", markersize=3)
+    plt.xlabel("Rank (順位 / 排名)", fontsize=12)
+    plt.ylabel("Frequency (頻度 / 频率)", fontsize=12)
+    plt.title("Zipf's Law / Zipfの法則", fontsize=14, fontweight="bold")
+    plt.grid(True, which="major", linestyle="-", linewidth=0.5, alpha=0.5)
 
     out_path = Path(__file__).parent / output
-    plt.savefig(out_path, dpi=150, bbox_inches="tight")
+    plt.savefig(out_path, dpi=300, bbox_inches="tight")
     plt.close()
     return str(out_path)
 

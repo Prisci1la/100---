@@ -35,3 +35,7 @@ if __name__ == "__main__":
     text = load_text()
     for phrase in extract_a_no_b(text):
         print(phrase)
+'''
+暴虐の王
+村の牧人
+'''

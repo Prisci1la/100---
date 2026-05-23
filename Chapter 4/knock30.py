@@ -32,3 +32,14 @@ if __name__ == "__main__":
     verbs = extract_verbs(text)
     for v in verbs:
         print(v)
+'''
+し
+除か
+なら
+し
+わから
+吹き
+遊ん
+暮し
+来
+'''

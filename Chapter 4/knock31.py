@@ -26,3 +26,14 @@ if __name__ == "__main__":
     text = load_text()
     for surface, lemma in extract_verbs_with_lemma(text):
         print(f"{surface}\t{lemma}")
+'''
+し      する
+除か    除く
+なら    なる
+し      する
+わから  わかる
+吹き    吹く
+遊ん    遊ぶ
+暮し    暮す
+来      来る
+'''

@@ -45,3 +45,7 @@ if __name__ == "__main__":
     sentence = "メロスは激怒した。"
     path = visualize_dependency(sentence)
     print(f"\n依存树已保存到 / 依存木を保存しました: {path}")
+'''
+メロスは → 激怒した
+激怒した → [ROOT]
+'''
