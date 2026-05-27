@@ -11,81 +11,53 @@
   完整依存解析需要 GiNZA / CaboCha。
 """
 
+# 导入 Janome 分词器 / Janome トークナイザーをインポート
 from janome.tokenizer import Tokenizer
+# 从 knock30 模块导入 load_text 函数 / knock30 モジュールから load_text 関数をインポート
 from knock30 import load_text
 
 
-def split_bunsetsu(text: str) -> list[list]:
-    """
-    文を文節に分割する（粗い規則）。
-    将句子分割为文节（粗略规则）。
-
-    規則 / 规则：
-      助詞・助動詞・記号で文節を区切る
-      （助词 / 助动词 / 符号作为文节边界）
-    """
+def split_bunsetsu(text: str) -> list[list]:  # 将文本分割为文节 / テキストを文節に分割
     tokenizer = Tokenizer()
     bunsetsu_list: list[list] = []
     current: list = []
     for token in tokenizer.tokenize(text):
-        pos = token.part_of_speech.split(",")[0]
+        pos = token.part_of_speech.split(",")[0]  # 词性第一项 / 品詞の最初
         current.append(token)
-        if pos in ("助詞", "助動詞", "記号"):
-            # 文区切り（。）なら文末まで含めて終了
-            if token.surface in ("。", "！", "？"):
-                bunsetsu_list.append(current)
-                current = []
-            else:
-                bunsetsu_list.append(current)
-                current = []
+        if pos in ("助詞", "助動詞", "記号"):  # 文节分界符 / 文節の区切り
+            bunsetsu_list.append(current)
+            current = []
     if current:
         bunsetsu_list.append(current)
     return bunsetsu_list
 
 
-def bunsetsu_text(bunsetsu: list) -> str:
-    """文節を文字列化（記号を除く）/ 文节字符串化（去除符号）"""
-    return "".join(
-        t.surface for t in bunsetsu
-        if t.part_of_speech.split(",")[0] != "記号"
-    )
+def bunsetsu_text(bunsetsu: list) -> str:  # 文节字符串化（去除符号）/ 文節を文字列化
+    return "".join(t.surface for t in bunsetsu  # 连接非「符号」的 token / 記号以外のトークンを連結
+                   if t.part_of_speech.split(",")[0] != "記号")
 
 
-def extract_dependencies(text: str) -> list[tuple[str, str]]:
-    """
-    (係り元, 係り先) のリストを返す。最後の文節は ROOT として除外。
-    返回 (依存来源, 依存目标) 列表，最后一个文节为 ROOT，排除。
-
-    ヒューリスティック / 启发式：
-      日本語は「左から右に係る」性質があるので、
-      各文節は右隣の文節に係るとみなす。
-      日语依赖关系是「从左到右」的，每个文节依赖于右侧最近的文节。
-    """
+def extract_dependencies(text: str) -> list[tuple[str, str]]:  # 提取依存关系 / 依存関係を抽出
     bunsetsu_list = split_bunsetsu(text)
     deps: list[tuple[str, str]] = []
     for i in range(len(bunsetsu_list) - 1):
-        child = bunsetsu_text(bunsetsu_list[i])
-        head = bunsetsu_text(bunsetsu_list[i + 1])
+        child = bunsetsu_text(bunsetsu_list[i])  # 依存元の文節 / 依存来源
+        head = bunsetsu_text(bunsetsu_list[i + 1])  # 依存先の文節 / 依存目标
         if child and head:
             deps.append((child, head))
     return deps
+    return deps
 
 
+# 程序入口 / プログラムエントリポイント
 if __name__ == "__main__":
+    # 读取文本内容 / テキスト内容を読み込む
     text = load_text()
+    # 遍历提取的依存关系 / 抽出した依存関係をループ
     for child, head in extract_dependencies(text):
+        # 以制表符分隔打印依存来源和目标 / 係り元と係り先をタブ文字で区切って出力
         print(f"{child}\t{head}")
 '''
-メロスは        激怒した
-必ず    かの邪智暴虐の
-かの邪智暴虐の  王を
-王を    除かなけれ
-除かなけれ      ば
-ば      ならぬ
-ならぬ  と
-と      決意した
-メロスに        は
-は      政治が
 政治が  わからぬ
 村の    牧人で
 牧人で  ある

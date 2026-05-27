@@ -11,86 +11,86 @@ jawiki-country.json をコーパスとして、単語（形態素）の出現頻
   "text" ：記事本文 / 正文
 """
 
+# 导入 json 用于处理 JSON 数据 / json をインポートして JSON データを処理
 import json
+# 导入 re 用于正则表达式 / re をインポートして正規表現を実施
 import re
+# 导入 gzip 用于处理压缩文件 / gzip をインポートして圧縮ファイルを処理
 import gzip
+# 导入 Counter 用于统计频率 / Counter をインポートして頻度を数える
 from collections import Counter
+# 导入 Path 用于文件处理 / Path をインポートしてファイル処理
 from pathlib import Path
+# 导入 Janome 分词器 / Janome トークナイザーをインポート
 from janome.tokenizer import Tokenizer
 
 
+# 定义语料库路径
 CORPUS = Path(__file__).parent / "jawiki-country.json"
 
 
-def load_articles() -> list[dict]:
-    """
-    JSON / JSON.gz の両方に対応して記事リストを読み込む。
-    同时兼容 JSON / JSON.gz，返回文章列表。
-    """
+def load_articles() -> list[dict]:  # 加载JSON/JSON.gz文章 / JSON/JSON.gz形式で記事を読み込む
     if CORPUS.suffix == ".gz":
-        with gzip.open(CORPUS, "rt", encoding="utf-8") as f:
+        with gzip.open(CORPUS, "rt", encoding="utf-8") as f:  # 压缩文件 / 圧縮ファイル
             return [json.loads(line) for line in f]
     return [json.loads(line) for line in CORPUS.read_text(encoding="utf-8").splitlines()]
 
 
-def remove_markup(text: str) -> str:
-    """
-    第3章を参考に MediaWiki マークアップを簡易除去する。
-    参考第 3 章，简单移除 MediaWiki 标记。
-    """
-    text = re.sub(r"'{2,5}", "", text)                              # 強調 / 强调
-    text = re.sub(r"\[\[(?:ファイル|File|Image):[^\]]+\]\]", "", text)  # ファイル / 文件
-    text = re.sub(r"\[\[([^|\]]+\|)?([^\]]+)\]\]", r"\2", text)    # 内部リンク / 内部链接
-    text = re.sub(r"\[https?://[^\s\]]+\s+([^\]]+)\]", r"\1", text) # 外部リンク文字付き
-    text = re.sub(r"\[https?://[^\]]+\]", "", text)                # 外部リンク
-    text = re.sub(r"<ref[^>]*>.*?</ref>", "", text, flags=re.DOTALL)
-    text = re.sub(r"<[^>]+/?>", "", text)
-    text = re.sub(r"\{\{[^{}]+\}\}", "", text)                     # テンプレート
+def remove_markup(text: str) -> str:  # 移除MediaWiki标记 / MediaWikiマークアップを除去
+    text = re.sub(r"'{2,5}", "", text)  # 强调 / 強調
+    text = re.sub(r"\[\[(?:ファイル|File|Image):[^\]]+\]\]", "", text)  # 文件 / 画像
+    text = re.sub(r"\[\[([^|\]]+\|)?([^\]]+)\]\]", r"\2", text)  # 内部链接 / 内部リンク
+    text = re.sub(r"\[https?://[^\s\]]+\s+([^\]]+)\]", r"\1", text)  # 外部链接
+    text = re.sub(r"\[https?://[^\]]+\]", "", text)
+    text = re.sub(r"<ref[^>]*>.*?</ref>", "", text, flags=re.DOTALL)  # 参考标签 / 参考タグ
+    text = re.sub(r"<[^>]+/?>", "", text)  # HTML标签 / HTMLタグ
+    text = re.sub(r"\{\{[^{}]+\}\}", "", text)  # 模板 / テンプレート
     return text
 
 
-def tokenize_corpus() -> list[str]:
-    """全記事を形態素に分割した全トークンを返す。/ 返回全部文章分词后的全部 token。"""
+def tokenize_corpus() -> list[str]:  # 分词统计所有单词 / すべての単語を抽出
     tokenizer = Tokenizer()
-    tokens: list[str] = []
+    words: list[str] = []
     for article in load_articles():
-        clean = remove_markup(article["text"])
+        clean = remove_markup(article["text"])  # 清理文本 / クリーンアップ
         for tok in tokenizer.tokenize(clean):
-            pos = tok.part_of_speech.split(",")[0]
-            # 記号と空白は除外 / 排除符号和空白
-            if pos == "記号" or not tok.surface.strip():
+            pos = tok.part_of_speech.split(",")[0]  # 获取词性 / 品詞取得
+            # 排除符号、空白、助词、助动词 / 記号・空白・助詞・助動詞を除外
+            if pos in ("記号", "空白", "助詞", "助動詞") or not tok.surface.strip():
                 continue
-            tokens.append(tok.surface)
-    return tokens
+            words.append(tok.surface)  # 表层形 / 表層形
+    return words
 
 
-def top_words(n: int = 20) -> list[tuple[str, int]]:
-    """頻度上位 n 語を返す。/ 返回频率前 n 个词。"""
-    return Counter(tokenize_corpus()).most_common(n)
+def top_words(n: int = 20) -> list[tuple[str, int]]:  # 频率前n个单词 / 頻度上位n個の単語
+    return Counter(tokenize_corpus()).most_common(n)  # 统计和排序 / 統計と順序
 
 
+# 程序入口 / プログラムエントリポイント
 if __name__ == "__main__":
+    # 遍历频率最高的 20 个单词 / 出現頻度が高い上位 20 個の単語をループ
     for word, freq in top_words(20):
+        # 打印单词和频率，以制表符分隔 / 単語と频度をタブ文字で区切って出力
         print(f"{word}\t{freq}")
 '''
-の      72511
-は      42775
-に      40678
-が      36768
-を      31621
-た      29023
-で      28132
-と      22378
-て      21603
-し      21183
+し      21160
 年      19927
 |       18125
-れ      11618
+れ      11617
 いる    11398
 さ      11031
 =       10108
-ある    9875
 *       9302
-も      8871
 ===     8504
+月      8236
+する    7883
+人      7467
+日      6210
+==      6180
+国      5912
+1       5793
+-       5710
+||      5587
+.       5418
+語      4603
 '''
