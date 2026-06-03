@@ -5,19 +5,20 @@ knock46.py: 川柳生成 / 川柳の生成
 本脚本会根据给定主题生成10首川柳。 / このスクリプトでは、指定したお題について10個の川柳を生成します。
 """
 
-from pathlib import Path
+from pathlib import Path  # 导入路径处理类 / パス処理用クラスをインポート
 
-from openai_config import DEFAULT_MAX_COMPLETION_TOKENS, DEFAULT_MODEL, create_openai_client
+from openai_config import DEFAULT_MAX_COMPLETION_TOKENS, DEFAULT_MODEL, create_openai_client  # 导入配置常量和OpenAI客户端创建函数 / 設定定数とOpenAIクライアント作成関数をインポート
 
 
-SENRYU_OUTPUT_PATH = Path(__file__).with_name("senryu.txt")
+SENRYU_OUTPUT_PATH = Path(__file__).with_name("senryu.txt")  # 定义川柳输出文件路径 / 川柳の出力ファイルパスを定義
 
 
 def generate_senryu():  # 生成川柳 / 川柳を生成する
 
-    client = create_openai_client()
+    client = create_openai_client()  # 初始化OpenAI客户端 / OpenAIクライアントを初期化
 
-    prompt = """
+    prompt = (  # 构建川柳生成提示词 / 川柳生成用プロンプトを構築
+        """
     以下のお題について、川柳を10個作成してください。
     川柳は5-7-5の音数構成で、日本の伝統的な短詩形です。
     ユーモアや風刺を含めて、創意工夫のある作品をお願いします。
@@ -32,33 +33,34 @@ def generate_senryu():  # 生成川柳 / 川柳を生成する
 
     各川柳は、音数が正確に5-7-5になるようにしてください。
     """
+    )
 
-    message = client.chat.completions.create(
-        model=DEFAULT_MODEL,
-        max_completion_tokens=DEFAULT_MAX_COMPLETION_TOKENS,
-        reasoning_effort="minimal",
-        verbosity="low",
-        messages=[
+    message = client.chat.completions.create(  # 调用OpenAI API生成川柳 / OpenAI APIを呼び出して川柳を生成
+        model=DEFAULT_MODEL,  # 指定模型 / モデルを指定
+        max_completion_tokens=DEFAULT_MAX_COMPLETION_TOKENS,  # 设置最大token数 / 最大トークン数を設定
+        reasoning_effort="minimal",  # 设置推理难度为最小 / 推論の負荷を最小に設定
+        verbosity="low",  # 设置详细度为低 / 出力の詳細度を低く設定
+        messages=[  # 构建消息列表 / メッセージリストを構築
             {
-                "role": "user",
-                "content": prompt
+                "role": "user",  # 消息角色为用户 / メッセージの役割をユーザーに設定
+                "content": prompt,  # 消息内容为川柳生成提示词 / メッセージ内容を川柳生成プロンプトに設定
             }
         ]
     )
 
-    response = message.choices[0].message.content or ""
-    SENRYU_OUTPUT_PATH.write_text(response, encoding="utf-8")
+    response = message.choices[0].message.content or ""  # 提取生成结果文本 / 生成結果のテキストを抽出
+    SENRYU_OUTPUT_PATH.write_text(response, encoding="utf-8")  # 将生成结果保存到文件 / 生成結果をファイルに保存
 
-    print("=" * 60)
-    print("knock46: 川柳の生成")
-    print("=" * 60)
-    print("\n【お題】AI時代の仕事")
-    print("\n【生成された川柳】")
-    print(response)
-    print(f"\n保存先: {SENRYU_OUTPUT_PATH}")
-    print("\n" + "=" * 60)
+    print("=" * 60)  # 输出分割线 / 区切り線を出力
+    print("knock46: 川柳の生成")  # 输出任务标题 / タスクのタイトルを出力
+    print("=" * 60)  # 输出分割线 / 区切り線を出力
+    print("\n【お題】AI時代の仕事")  # 输出主题标签 / お題ラベルを出力
+    print("\n【生成された川柳】")  # 输出生成结果标签 / 生成結果ラベルを出力
+    print(response)  # 输出生成的川柳 / 生成された川柳を出力
+    print(f"\n保存先: {SENRYU_OUTPUT_PATH}")  # 输出保存路径 / 保存先を出力
+    print("\n" + "=" * 60)  # 输出分割线 / 区切り線を出力
 
-    return response
+    return response  # 返回生成结果文本 / 生成結果テキストを返す
 
 
 if __name__ == "__main__":

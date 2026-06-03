@@ -4,50 +4,51 @@ knock47.py: 川柳自动评价 / 川柳の自動評価
 作为评价者，对问题46生成的川柳趣味性进行10分制评价。 / 問題46で生成した川柳の面白さを、評価者として10段階で評価します。
 """
 
-import re
+import re  # 导入正则表达式模块 / 正規表現モジュールをインポート
 
-from knock46 import SENRYU_OUTPUT_PATH, generate_senryu
-from openai_config import DEFAULT_MAX_COMPLETION_TOKENS, DEFAULT_MODEL, create_openai_client
+from knock46 import SENRYU_OUTPUT_PATH, generate_senryu  # 导入川柳输出路径和生成函数 / 川柳出力パスと生成関数をインポート
+from openai_config import DEFAULT_MAX_COMPLETION_TOKENS, DEFAULT_MODEL, create_openai_client  # 导入配置常量和OpenAI客户端创建函数 / 設定定数とOpenAIクライアント作成関数をインポート
 
 
 def extract_senryu_lines(text):  # 从生成文本中提取编号川柳行 / 生成テキストから番号付きの川柳行を抽出する
 
-    senryu = []
-    for line in text.splitlines():
-        match = re.match(r"\s*\d+[\.\)]\s*(.+?)\s*$", line)
+    senryu = []  # 初始化川柳列表 / 川柳リストを初期化
+    for line in text.splitlines():  # 逐行处理生成文本 / 生成テキストを行ごとに処理
+        match = re.match(r"\s*\d+[\.\)]\s*(.+?)\s*$", line)  # 匹配带编号的川柳行 / 番号付きの川柳行に一致させる
         if match:
-            senryu.append(match.group(1))
+            senryu.append(match.group(1))  # 保存编号后面的川柳正文 / 番号の後ろにある川柳本文を保存
 
     if senryu:
-        return senryu
+        return senryu  # 如果成功提取编号行，返回川柳列表 / 番号付き行を抽出できた場合は川柳リストを返す
 
-    return [line.strip() for line in text.splitlines() if line.strip()]
+    return [line.strip() for line in text.splitlines() if line.strip()]  # 如果没有编号，返回所有非空行 / 番号がない場合は空でない行を返す
 
 
 def load_or_generate_senryu():  # 读取问题46的输出，必要时先生成 / 問題46の出力を読み込み、必要なら先に生成する
 
-    if SENRYU_OUTPUT_PATH.exists():
-        text = SENRYU_OUTPUT_PATH.read_text(encoding="utf-8")
+    if SENRYU_OUTPUT_PATH.exists():  # 如果川柳输出文件已经存在 / 川柳出力ファイルが存在する場合
+        text = SENRYU_OUTPUT_PATH.read_text(encoding="utf-8")  # 读取已有川柳文本 / 既存の川柳テキストを読み込む
         if text.strip():
-            return extract_senryu_lines(text)
+            return extract_senryu_lines(text)  # 文件非空时提取并返回川柳 / ファイルが空でなければ川柳を抽出して返す
 
-    generated = generate_senryu()
-    return extract_senryu_lines(generated)
+    generated = generate_senryu()  # 没有可用文件时先生成川柳 / 利用可能なファイルがなければ先に川柳を生成
+    return extract_senryu_lines(generated)  # 从生成结果中提取川柳 / 生成結果から川柳を抽出
 
 
 def evaluate_senryu():  # 用10分制评价生成的川柳 / 生成した川柳を10段階で評価する
 
-    client = create_openai_client()
-    senryu_samples = load_or_generate_senryu()
+    client = create_openai_client()  # 初始化OpenAI客户端 / OpenAIクライアントを初期化
+    senryu_samples = load_or_generate_senryu()  # 读取或生成待评价川柳 / 評価対象の川柳を読み込みまたは生成
 
-    print("=" * 60)
-    print("knock47: 川柳の自動評価（10段階スケール）")
-    print("=" * 60)
-    print(f"評価対象: {SENRYU_OUTPUT_PATH}")
+    print("=" * 60)  # 输出分割线 / 区切り線を出力
+    print("knock47: 川柳の自動評価（10段階スケール）")  # 输出任务标题 / タスクのタイトルを出力
+    print("=" * 60)  # 输出分割线 / 区切り線を出力
+    print(f"評価対象: {SENRYU_OUTPUT_PATH}")  # 输出评价对象路径 / 評価対象のパスを出力
 
-    results = []
-    for i, senryu in enumerate(senryu_samples, 1):
-        evaluation_prompt = f"""
+    results = []  # 初始化评价结果列表 / 評価結果リストを初期化
+    for i, senryu in enumerate(senryu_samples, 1):  # 逐首评价川柳 / 川柳を1句ずつ評価
+        evaluation_prompt = (  # 构建单首川柳评价提示词 / 1句分の川柳評価プロンプトを構築
+            f"""
 次の川柳の面白さを10段階で評価してください。
 （1 = つまらない、10 = とても面白い）
 
@@ -57,30 +58,31 @@ def evaluate_senryu():  # 用10分制评价生成的川柳 / 生成した川柳�
 評価スコア: [1-10の数字]
 評価理由: [理由の簡潔な説明]
 """
+        )
 
-        message = client.chat.completions.create(
-            model=DEFAULT_MODEL,
-            max_completion_tokens=DEFAULT_MAX_COMPLETION_TOKENS,
-            reasoning_effort="minimal",
-            verbosity="low",
-            messages=[
+        message = client.chat.completions.create(  # 调用OpenAI API评价川柳 / OpenAI APIを呼び出して川柳を評価
+            model=DEFAULT_MODEL,  # 指定模型 / モデルを指定
+            max_completion_tokens=DEFAULT_MAX_COMPLETION_TOKENS,  # 设置最大token数 / 最大トークン数を設定
+            reasoning_effort="minimal",  # 设置推理难度为最小 / 推論の負荷を最小に設定
+            verbosity="low",  # 设置详细度为低 / 出力の詳細度を低く設定
+            messages=[  # 构建消息列表 / メッセージリストを構築
                 {
-                    "role": "user",
-                    "content": evaluation_prompt,
+                    "role": "user",  # 消息角色为用户 / メッセージの役割をユーザーに設定
+                    "content": evaluation_prompt,  # 消息内容为评价提示词 / メッセージ内容を評価プロンプトに設定
                 }
             ],
         )
 
-        response = message.choices[0].message.content or ""
-        results.append(response)
+        response = message.choices[0].message.content or ""  # 提取评价结果文本 / 評価結果テキストを抽出
+        results.append(response)  # 保存评价结果 / 評価結果を保存
 
-        print(f"\n【川柳{i}】")
-        print(senryu)
-        print("\n【評価結果】")
-        print(response)
+        print(f"\n【川柳{i}】")  # 输出川柳编号标签 / 川柳番号ラベルを出力
+        print(senryu)  # 输出当前川柳 / 現在の川柳を出力
+        print("\n【評価結果】")  # 输出评价结果标签 / 評価結果ラベルを出力
+        print(response)  # 输出评价结果 / 評価結果を出力
 
-    print("\n" + "=" * 60)
-    return results
+    print("\n" + "=" * 60)  # 输出分割线 / 区切り線を出力
+    return results  # 返回所有评价结果 / すべての評価結果を返す
 
 
 if __name__ == "__main__":
