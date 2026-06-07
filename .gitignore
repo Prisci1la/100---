@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+.DS_Store
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+.obsidian/
+.claude/
+Chapter 5/senryu.txt
