@@ -1,0 +1,31 @@
+{
+    "python-envs.defaultEnvManager": "ms-python.python:system",
+    "python-envs.pythonProjects": [],
+    "editor.tokenColorCustomizations": {
+        "textMateRules": [
+            {
+                "scope": "comment",
+                "settings": {
+                    "foreground": "#7c8a96"
+                }
+            },
+            {
+                "scope": [
+                    "entity.name.function",
+                    "variable.parameter",
+                    "variable",
+                    "support.variable"
+                ],
+                "settings": {
+                    "foreground": "#ffffff"
+                }
+            },
+            {
+                "scope": "string",
+                "settings": {
+                    "foreground": "#a5d6ff"
+                }
+            }
+        ]
+    }
+}
