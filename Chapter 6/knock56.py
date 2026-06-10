@@ -19,6 +19,17 @@ def iter_wordsim353(path=None):  # 逐行读取WordSimilarity-353数据 / WordSi
         for row in reader:  # 遍历每一行评分数据 / 各行の評価データを順に処理する
             yield row["Word 1"], row["Word 2"], float(row["Human (mean)"])  # 返回两个单词和人工平均分 / 2語と人手平均スコアを返す
 
+    '''
+Word 1 | Word 2 | Human (mean)
+-------|--------|-------------
+ love   | sex    | 8.94
+ tiger  | cat    | 7.46
+ book   | paper  | 7.46
+
+for word_a, word_b, human_score in iter_wordsim353():
+    return: ("love", "sex", 8.94)
+          ("tiger", "cat", 7.46)
+'''
 
 def spearman_correlation(xs, ys):  # 计算Spearman秩相关系数 / Spearman順位相関係数を計算する
     def average_ranks(values):  # 计算并列值的平均排名 / 同順位を考慮した平均順位を計算する
@@ -34,7 +45,28 @@ def spearman_correlation(xs, ys):  # 计算Spearman秩相关系数 / Spearman順
                 ranks[indexed[k][0]] = rank  # 写回对应原索引位置 / 元の添字位置へ書き戻す
             i = j  # 继续处理下一组值 / 次の値のグループへ進む
         return ranks  # 返回排名数组 / 順位配列を返す
+    '''
+scores = [0.7, 0.5, 0.5, 0.8, 0.3]
+index    = [0,   1,   2,   3,   4]
 
+Step 1: 
+sorted: [(4,0.3), (1,0.5), (2,0.5), (0,0.7), (3,0.8)]
+
+Step 2: 
+  0.3 → rank = 1 
+  0.5 → rank = 2.5 (平均 = (2+3)/2 = 2.5)
+  0.7 → rank = 4 
+  0.8 → rank = 5 
+
+Step 3: writes back:
+ranks[0] = 4
+ranks[1] = 2.5
+ranks[2] = 2.5
+ranks[3] = 5
+ranks[4] = 1
+
+return: [4, 2.5, 2.5, 5, 1]
+    '''
     rx = average_ranks(xs)  # 计算第一组数据的排名 / 1つ目のデータの順位を計算する
     ry = average_ranks(ys)  # 计算第二组数据的排名 / 2つ目のデータの順位を計算する
     mean_x = sum(rx) / len(rx)  # 计算第一组排名均值 / 1つ目の順位平均を計算する
