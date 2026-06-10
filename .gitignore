@@ -12,8 +12,5 @@ venv/
 .claude/
 Chapter 5/senryu.txt
 Chapter 6/GoogleNews-vectors-negative300.bin
-Chapter 6/questions-words.txt
 Chapter 6/wordsim353.zip
 Chapter 6/wordsim353/
-Chapter 6/analogy_predictions.txt
-Chapter 6/*.png
