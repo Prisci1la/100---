@@ -5,7 +5,27 @@ knock55.py: 类比任务的正确率 / アナロジータスクでの正解率
 分别输出语义类比和文法类比的正确率。 / 意味的アナロジーと文法的アナロジーの正解率をそれぞれ表示する。
 '''
 
-from chapter6_utils import QUESTIONS_PATH, load_vectors, semantic_section  # 导入问题文件路径、模型加载函数和语义节判断函数 / 問題ファイルパスとモデル読み込み関数と意味節判定関数を導入する
+from pathlib import Path  # 导入路径处理类 / パス処理クラスを読み込む
+from chapter6_utils import load_vectors  # 导入模型加载函数 / モデル読み込み関数を導入する
+
+
+def iter_question_sections(path=None):  # 逐行读取类比问题数据 / アナロジー問題データを1行ずつ読む
+    if path is None:
+        path = Path(__file__).resolve().parent / "questions-words.txt"
+    section = None  # 初始化当前节名称 / 現在の節名を初期化する
+    with path.open(encoding="utf-8") as file:  # 以UTF-8打开问题文件 / UTF-8で問題ファイルを開く
+        for line in file:  # 遍历文件每一行 / ファイルの各行を順に処理する
+            line = line.strip()  # 去除首尾空白 / 行頭と行末の空白を除去する
+            if not line:  # 如果是空行则跳过 / 空行なら読み飛ばす
+                continue  # 继续下一行 / 次の行へ進む
+            if line.startswith(":"):  # 如果是节标题行 / 節タイトル行かどうか判定する
+                section = line[1:].strip()  # 记录当前节名称 / 現在の節名を記録する
+                continue  # 标题行不作为题目返回 / タイトル行は問題として返さない
+            yield section, line.split()  # 返回节名和该行单词列表 / 節名とその行の単語列を返す
+
+
+def semantic_section(section):  # 判断某一节是否属于语义类比 / ある節が意味的アナロジーか判定する
+    return not section.startswith("gram")  # gram开头的是文法类比 / gramで始まる節は文法アナロジーである
 
 
 def evaluate_all_sections():  # 评估全部类比节的正确率 / 全アナロジー節の正解率を評価する
@@ -15,7 +35,8 @@ def evaluate_all_sections():  # 评估全部类比节的正确率 / 全アナロ
         "syntactic": {"total": 0, "correct": 0},  # 准备文法类统计框架 / 文法系の集計枠を用意する
     }
 
-    _overall_score, sections = model.evaluate_word_analogies(str(QUESTIONS_PATH))  # 用gensim评估整个问题文件 / gensimで問題ファイル全体を評価する
+    questions_path = Path(__file__).resolve().parent / "questions-words.txt"  # 获取问题文件路径 / 問題ファイルパスを取得する
+    _overall_score, sections = model.evaluate_word_analogies(str(questions_path))  # 用gensim评估整个问题文件 / gensimで問題ファイル全体を評価する
     for section_data in sections:  # 遍历每一个节的评估结果 / 各節の評価結果を順に処理する
         section_name = section_data["section"]  # 取出当前节名称 / 現在の節名を取り出す
         key = "semantic" if semantic_section(section_name) else "syntactic"  # 判断该节属于语义还是文法 / その節が意味系か文法系か判定する
