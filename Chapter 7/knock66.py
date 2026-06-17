@@ -8,7 +8,6 @@ knock66.py: 混同行列の作成 / 混同行列の作成
 from chapter7_utils import load_sst2_data, create_bow_features  # データセット読み込み関数を導入 / 导入数据集读取函数
 from sklearn.linear_model import LogisticRegression  # ロジスティック回帰モデルを導入 / 导入逻辑回归模型
 from sklearn.metrics import confusion_matrix  # 混同行列関数を導入 / 导入混淆矩阵函数
-import numpy as np  # 数値計算ライブラリを導入 / 导入数值计算库
 
 
 def print_confusion_matrix(cm, labels=None):  # 混同行列を表示する関数を定義 / 定义打印混淆矩阵的函数
@@ -49,19 +48,6 @@ def main():  # メイン関数を定義する / 定义主函数
     cm = confusion_matrix(val_labels, val_predictions)  # 混同行列を計算 / 计算混淆矩阵
 
     print_confusion_matrix(cm, labels=['Negative (0)', 'Positive (1)'])  # 混同行列を表示 / 显示混淆矩阵
-
-    tn, fp, fn, tp = cm.ravel()  # 各要素を取得 / 获取各个元素
-
-    print("\n[Matrix Elements]:")  # 行列要素を表示 / 显示矩阵元素
-    print(f"True Negatives (TN): {tn}")  # 真陰性を出力 / 输出真负例
-    print(f"False Positives (FP): {fp}")  # 偽陽性を出力 / 输出假正例
-    print(f"False Negatives (FN): {fn}")  # 偽陰性を出力 / 输出假负例
-    print(f"True Positives (TP): {tp}")  # 真陽性を出力 / 输出真正例
-
-    print("\n[Prediction Distribution]:")  # 予測分布を表示 / 显示预测分布
-    unique, counts = np.unique(val_predictions, return_counts=True)  # ユニーク値とカウントを取得 / 获取唯一值和计数
-    for label, count in zip(unique, counts):  # 各ラベルについて反復 / 对每个标签进行迭代
-        print(f"Class {label}: {count} predictions")  # ラベルのカウントを出力 / 输出标签的计数
 
 
 if __name__ == "__main__":  # ファイルを直接実行した場合のみ動かす / 只有直接运行文件时才执行

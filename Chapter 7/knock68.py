@@ -7,15 +7,10 @@ knock68.py: 特徴量の重みの確認 / 特徴量の重みの確認
 
 from chapter7_utils import load_sst2_data, create_bow_features  # データセット読み込み関数を導入 / 导入数据集读取函数
 from sklearn.linear_model import LogisticRegression  # ロジスティック回帰モデルを導入 / 导入逻辑回归模型
-import numpy as np  # 数値計算ライブラリを導入 / 导入数值计算库
 
 
 def main():  # メイン関数を定義する / 定义主函数
     train_df, val_df = load_sst2_data()  # SST-2データセットを読み込む / 读取SST-2数据集
-
-    print("=" * 50)  # 区切り線を出力 / 输出分隔线
-    print("Feature Importance Analysis")  # タイトルを出力 / 输出标题
-    print("=" * 50)  # 区切り線を出力 / 输出分隔线
 
     train_features, val_features, vectorizer = create_bow_features(  # 特徴ベクトルを作成 / 创建特征向量
         train_df['sentence'].values,  # 訓練テキスト / 训练文本
@@ -27,16 +22,10 @@ def main():  # メイン関数を定義する / 定义主函数
     model = LogisticRegression(max_iter=1000, random_state=42)  # ロジスティック回帰モデルを初期化 / 初始化逻辑回归模型
     model.fit(train_features, train_labels)  # モデルを学習 / 训练模型
 
-    print("\nExtracting feature weights...")  # 特徴重み抽出開始を出力 / 输出特征权重提取开始
-
     feature_names = vectorizer.get_feature_names_out()  # 特徴名を取得 / 获取特征名
     coefficients = model.coef_[0]  # 係数を取得 / 获取系数
 
     feature_importance = list(zip(feature_names, coefficients))  # 特徴と係数をペアにする / 将特征和系数配对
-    feature_importance.sort(key=lambda x: abs(x[1]), reverse=True)  # 絶対値でソート / 按绝对值排序
-
-    print(f"\nTotal number of features: {len(feature_importance)}")  # 特徴総数を出力 / 输出特征总数
-    print(f"Model intercept: {model.intercept_[0]:.6f}")  # インターセプトを出力 / 输出截距
 
     print("\n[Top 20 Positive Features (Contribute to Positive Sentiment)]:")  # ポジティブ特徴を表示 / 显示积极特征
     positive_features = sorted(feature_importance, key=lambda x: x[1], reverse=True)[:20]  # 上位20の正例特徴を取得 / 获取前20个正例特征
@@ -48,26 +37,12 @@ def main():  # メイン関数を定義する / 定义主函数
     for i, (feature, weight) in enumerate(negative_features):  # 各特徴について反復 / 对每个特征进行迭代
         print(f"{i+1:2d}. {feature:20s} : {weight:8.6f}")  # 特徴と重みを出力 / 输出特征和权重
 
-    print("\n[Weight Statistics]:")  # 重み統計を表示 / 显示权重统计
-    print(f"Max weight: {np.max(coefficients):.6f}")  # 最大重みを出力 / 输出最大权重
-    print(f"Min weight: {np.min(coefficients):.6f}")  # 最小重みを出力 / 输出最小权重
-    print(f"Mean weight: {np.mean(coefficients):.6f}")  # 平均重みを出力 / 输出平均权重
-    print(f"Std weight: {np.std(coefficients):.6f}")  # 標準偏差を出力 / 输出标准差
-
 
 if __name__ == "__main__":  # ファイルを直接実行した場合のみ動かす / 只有直接运行文件时才执行
     main()  # メイン関数を呼び出す / 调用主函数
 
 '''
 运行结果: / 実行結果:
-==================================================
-Feature Importance Analysis
-==================================================
-
-Extracting feature weights...
-
-Total number of features: 10000
-Model intercept: 0.119121
 
 [Top 20 Positive Features (Contribute to Positive Sentiment)]:
  1. powerful             : 4.944601
@@ -112,10 +87,4 @@ Model intercept: 0.119121
 18. dull                 : -3.560590
 19. clichés              : -3.556712
 20. unfunny              : -3.538886
-
-[Weight Statistics]:
-Max weight: 4.944601
-Min weight: -5.944002
-Mean weight: -0.049192
-Std weight: 0.989611
 '''
