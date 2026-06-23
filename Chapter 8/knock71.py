@@ -28,3 +28,13 @@ def main():  # 定义主函数 / メイン関数を定義する
 
 if __name__ == "__main__":  # 直接运行时执行 / 直接実行された場合だけ動かす
     main()  # 调用主函数 / メイン関数を呼び出す
+
+r'''
+运行结果: / 実行結果:
+==================================================
+Knock 71: SST-2 Dataset
+==================================================
+train examples: 65710
+dev examples: 872
+{'text': 'hide new secretions from the parental units', 'label': tensor([0.]), 'input_ids': tensor([ 5785,    66,    18,    12, 15095,  1594])}
+'''

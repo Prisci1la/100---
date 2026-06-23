@@ -38,3 +38,10 @@ def main():  # 定义主函数 / メイン関数を定義する
 
 if __name__ == "__main__":  # 直接运行时执行 / 直接実行された場合だけ動かす
     main()  # 调用主函数 / メイン関数を呼び出す
+
+r'''
+运行结果: / 実行結果:
+Using device: cuda
+saved to: C:\Users\Administrator\Desktop\100ノック\Chapter 8\tutorial07_model.pth
+output: tensor([[ 0.0521, -0.4180]], device='cuda:0', grad_fn=<AddmmBackward0>)
+'''

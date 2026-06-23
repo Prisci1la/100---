@@ -75,3 +75,19 @@ def main():  # 定义主函数 / メイン関数を定義する
 
 if __name__ == "__main__":  # 直接运行时执行 / 直接実行された場合だけ動かす
     main()  # 调用主函数 / メイン関数を呼び出す
+
+r'''
+运行结果: / 実行結果:
+Using device: cuda
+epoch 1
+accuracy=0.964286, avg_loss=0.327875
+epoch 2
+accuracy=0.973214, avg_loss=0.159297
+epoch 3
+accuracy=1.000000, avg_loss=0.092211
+epoch 4
+accuracy=0.991071, avg_loss=0.065999
+epoch 5
+accuracy=1.000000, avg_loss=0.053455
+saved to: C:\Users\Administrator\Desktop\100ノック\Chapter 8\tutorial08_model.pth
+'''

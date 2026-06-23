@@ -19,8 +19,8 @@ from torch.utils.data import Dataset  # 自定义数据集基类 / カスタム�
 
 
 BASE_DIR = Path(__file__).resolve().parent  # 当前第8章目录 / 現在の第8章ディレクトリ
-DEFAULT_TRAIN_PATH = BASE_DIR.parent / "Chapter 7" / "data" / "train.csv"  # 默认训练数据 / 既定の訓練データ
-DEFAULT_DEV_PATH = BASE_DIR.parent / "Chapter 7" / "data" / "val.csv"  # 默认开发数据 / 既定の開発データ
+DEFAULT_TRAIN_PATH = BASE_DIR / "data" / "SST-2" / "train.tsv"  # 默认训练数据 / 既定の訓練データ
+DEFAULT_DEV_PATH = BASE_DIR / "data" / "SST-2" / "dev.tsv"  # 默认开发数据 / 既定の開発データ
 DEFAULT_VECTOR_PATH = BASE_DIR.parent / "Chapter 6" / "GoogleNews-vectors-negative300.bin"  # 默认词向量路径 / 既定の単語ベクトルパス
 
 

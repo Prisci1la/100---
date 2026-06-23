@@ -80,3 +80,14 @@ def main():  # 定义主函数 / メイン関数を定義する
 
 if __name__ == "__main__":  # 直接运行时执行 / 直接実行された場合だけ動かす
     main()  # 调用主函数 / メイン関数を呼び出す
+
+r'''
+运行结果: / 実行結果:
+Using device: cuda
+GPU: NVIDIA GeForce RTX 5070 Ti
+epoch 01: loss=0.648294, dev_accuracy=0.606651
+epoch 02: loss=0.582137, dev_accuracy=0.709862
+epoch 03: loss=0.541365, dev_accuracy=0.730505
+epoch 04: loss=0.513981, dev_accuracy=0.746560
+epoch 05: loss=0.494448, dev_accuracy=0.746560
+'''

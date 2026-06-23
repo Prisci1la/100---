@@ -45,3 +45,13 @@ def main():  # 定义主函数 / メイン関数を定義する
 
 if __name__ == "__main__":  # 直接运行时执行 / 直接実行された場合だけ動かす
     main()  # 调用主函数 / メイン関数を呼び出す
+
+r'''
+运行结果: / 実行結果:
+Using device: cuda
+epoch 1: loss=0.577818
+epoch 2: loss=0.422926
+epoch 3: loss=0.333147
+epoch 4: loss=0.271214
+epoch 5: loss=0.226348
+'''

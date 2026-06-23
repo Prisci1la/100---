@@ -28,3 +28,22 @@ def main():  # 定义主函数 / メイン関数を定義する
 
 if __name__ == "__main__":  # 直接运行时执行 / 直接実行された場合だけ動かす
     main()  # 调用主函数 / メイン関数を呼び出す
+
+r'''
+运行结果: / 実行結果:
+Using device: cuda
+tensor:
+tensor([[1., 2.],
+        [3., 4.]])
+shape: torch.Size([2, 2]), dtype: torch.float32
+ones:
+tensor([[1., 1.],
+        [1., 1.]])
+random:
+tensor([[0.5402, 0.8460],
+        [0.6156, 0.3348]])
+product device: cuda:0
+product:
+tensor([[ 5., 11.],
+        [11., 25.]], device='cuda:0')
+'''

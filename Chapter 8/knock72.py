@@ -31,3 +31,15 @@ def main():  # 定义主函数 / メイン関数を定義する
 
 if __name__ == "__main__":  # 直接运行时执行 / 直接実行された場合だけ動かす
     main()  # 调用主函数 / メイン関数を呼び出す
+
+r'''
+运行结果: / 実行結果:
+==================================================
+Knock 72: BoW Classifier
+==================================================
+BoWClassifier(
+  (embedding): Embedding(50001, 300, padding_idx=0)
+  (linear): Linear(in_features=300, out_features=1, bias=True)
+)
+logits shape: torch.Size([2, 1])
+'''
