@@ -23,11 +23,12 @@ class ToyDataset(Dataset):  # 定义玩具数据集 / 小さなデータセッ�
 
 def main():  # 定义主函数 / メイン関数を定義する
     dataset = ToyDataset()  # 创建数据集 / データセットを作る
-    dataloader = DataLoader(dataset, batch_size=4, shuffle=True)  # 创建DataLoader / DataLoaderを作る
+    dataloader = DataLoader(dataset, batch_size=4, shuffle=False)  # 创建DataLoader / DataLoaderを作る
     for batch_id, (x, y) in enumerate(dataloader):  # 遍历batch / batchを走査する
         print(f"batch {batch_id}")  # 输出batch编号 / batch番号を出力する
-        print(f"x: {x}")  # 输出特征 / 特徴量を出力する
+        print(f"x shape: {x.shape}")  # 输出特征形状 / 特徴量の形状を出力する
         print(f"y: {y}")  # 输出标签 / ラベルを出力する
+        break  # 只显示一个batch / 1つのbatchだけ表示する
 
 
 if __name__ == "__main__":  # 直接运行时执行 / 直接実行された場合だけ動かす
@@ -36,19 +37,6 @@ if __name__ == "__main__":  # 直接运行时执行 / 直接実行された場�
 r'''
 运行结果: / 実行結果:
 batch 0
-x: tensor([[ 6.,  7.],
-        [ 4.,  5.],
-        [ 8.,  9.],
-        [12., 13.]])
-y: tensor([1, 0, 1, 1])
-batch 1
-x: tensor([[ 0.,  1.],
-        [ 2.,  3.],
-        [16., 17.],
-        [18., 19.]])
-y: tensor([0, 0, 1, 1])
-batch 2
-x: tensor([[14., 15.],
-        [10., 11.]])
-y: tensor([1, 1])
+x shape: torch.Size([4, 2])
+y: tensor([0, 0, 0, 1])
 '''

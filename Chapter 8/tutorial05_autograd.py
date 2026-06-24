@@ -20,8 +20,8 @@ def main():  # 定义主函数 / メイン関数を定義する
 
     print(f"Using device: {device}")  # 输出设备 / デバイスを出力する
     print(f"loss: {loss.item():.6f}")  # 输出损失 / 損失を出力する
-    print(f"w.grad:\n{w.grad}")  # 输出权重梯度 / 重みの勾配を出力する
-    print(f"b.grad:\n{b.grad}")  # 输出偏置梯度 / バイアスの勾配を出力する
+    print(f"w.grad shape: {w.grad.shape}")  # 输出权重梯度形状 / 重み勾配の形状を出力する
+    print(f"b.grad shape: {b.grad.shape}")  # 输出偏置梯度形状 / バイアス勾配の形状を出力する
 
 
 if __name__ == "__main__":  # 直接运行时执行 / 直接実行された場合だけ動かす
@@ -30,13 +30,7 @@ if __name__ == "__main__":  # 直接运行时执行 / 直接実行された場�
 r'''
 运行结果: / 実行結果:
 Using device: cuda
-loss: 2.090533
-w.grad:
-tensor([[0.2825, 0.2910, 0.3008],
-        [0.2825, 0.2910, 0.3008],
-        [0.2825, 0.2910, 0.3008],
-        [0.2825, 0.2910, 0.3008],
-        [0.2825, 0.2910, 0.3008]], device='cuda:0')
-b.grad:
-tensor([0.2825, 0.2910, 0.3008], device='cuda:0')
+loss: 0.162126
+w.grad shape: torch.Size([5, 3])
+b.grad shape: torch.Size([3])
 '''

@@ -18,12 +18,11 @@ def main():  # 定义主函数 / メイン関数を定義する
     product = gpu_tensor @ gpu_tensor.T  # 计算矩阵乘法 / 行列積を計算する
 
     print(f"Using device: {device}")  # 输出设备 / デバイスを出力する
-    print(f"tensor:\n{tensor}")  # 输出原始张量 / 元テンソルを出力する
     print(f"shape: {tensor.shape}, dtype: {tensor.dtype}")  # 输出形状和类型 / 形状と型を出力する
-    print(f"ones:\n{ones}")  # 输出全1张量 / 1テンソルを出力する
-    print(f"random:\n{random_tensor}")  # 输出随机张量 / 乱数テンソルを出力する
+    print(f"ones shape: {ones.shape}")  # 输出全1张量形状 / 1テンソルの形状を出力する
+    print(f"random shape: {random_tensor.shape}")  # 输出随机张量形状 / 乱数テンソルの形状を出力する
     print(f"product device: {product.device}")  # 输出运算设备 / 演算デバイスを出力する
-    print(f"product:\n{product}")  # 输出矩阵乘法结果 / 行列積の結果を出力する
+    print(f"product shape: {product.shape}")  # 输出矩阵乘法结果形状 / 行列積の形状を出力する
 
 
 if __name__ == "__main__":  # 直接运行时执行 / 直接実行された場合だけ動かす
@@ -32,18 +31,9 @@ if __name__ == "__main__":  # 直接运行时执行 / 直接実行された場�
 r'''
 运行结果: / 実行結果:
 Using device: cuda
-tensor:
-tensor([[1., 2.],
-        [3., 4.]])
 shape: torch.Size([2, 2]), dtype: torch.float32
-ones:
-tensor([[1., 1.],
-        [1., 1.]])
-random:
-tensor([[0.5402, 0.8460],
-        [0.6156, 0.3348]])
+ones shape: torch.Size([2, 2])
+random shape: torch.Size([2, 2])
 product device: cuda:0
-product:
-tensor([[ 5., 11.],
-        [11., 25.]], device='cuda:0')
+product shape: torch.Size([2, 2])
 '''

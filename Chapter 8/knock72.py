@@ -6,8 +6,26 @@ knock72.py: Bag of words模型的构建 / Bag of wordsモデルの構築
 '''
 
 import torch  # 导入PyTorch / PyTorchを導入する
+from torch import nn  # 导入神经网络模块 / ニューラルネットワークモジュールを導入する
 
-from chapter8_utils import BoWClassifier, build_embedding_resources, parse_common_args  # 导入模型和embedding工具 / モデルとembeddingツールを導入する
+from chapter8_utils import build_embedding_resources, parse_common_args  # 导入embedding工具 / embeddingツールを導入する
+
+
+class BoWClassifier(nn.Module):  # BoW二分类模型 / BoW二値分類モデル
+    def __init__(self, embedding_matrix, freeze_embeddings=True):  # 初始化模型 / モデルを初期化する
+        super().__init__()  # 调用父类初始化 / 親クラスを初期化する
+        embedding_tensor = torch.tensor(embedding_matrix, dtype=torch.float32)  # 将numpy矩阵转为Tensor / numpy行列をTensorへ変換する
+        self.embedding = nn.Embedding.from_pretrained(embedding_tensor, freeze=freeze_embeddings, padding_idx=0)  # 创建embedding层 / embedding層を作る
+        self.linear = nn.Linear(embedding_tensor.shape[1], 1)  # 创建线性分类层 / 線形分類層を作る
+
+    def forward(self, input_ids, lengths=None):  # 前向计算 / 順伝播を行う
+        embedded = self.embedding(input_ids)  # 将token ID转换为词向量 / token IDを単語ベクトルへ変換する
+        mask = (input_ids != 0).unsqueeze(-1)  # 创建PAD以外的掩码 / PAD以外のマスクを作る
+        summed = (embedded * mask).sum(dim=1)  # 对有效词向量求和 / 有効な単語ベクトルを合計する
+        if lengths is None:  # 如果没有传入长度 / 長さが渡されていない場合
+            lengths = mask.sum(dim=1).clamp(min=1).squeeze(-1)  # 从掩码计算长度 / マスクから長さを計算する
+        averaged = summed / lengths.to(embedded.device).unsqueeze(-1).clamp(min=1)  # 计算平均词向量 / 平均単語ベクトルを計算する
+        return self.linear(averaged)  # 输出logit / logitを出力する
 
 
 def main():  # 定义主函数 / メイン関数を定義する

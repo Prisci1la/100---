@@ -22,7 +22,7 @@
 python knock70.py --vector-path ../Chapter\ 6/GoogleNews-vectors-negative300.bin --max-vocab 50000
 python knock71.py --vector-path ../Chapter\ 6/GoogleNews-vectors-negative300.bin --max-vocab 50000
 python knock72.py --vector-path ../Chapter\ 6/GoogleNews-vectors-negative300.bin --max-vocab 50000
-python knock73.py --vector-path ../Chapter\ 6/GoogleNews-vectors-negative300.bin --max-vocab 50000 --epochs 5 --batch-size 32
+python knock73.py --vector-path ../Chapter\ 6/GoogleNews-vectors-negative300.bin --max-vocab 50000 --epochs 5
 ```
 
 `knock73.py` prints `Using device: cuda` when CUDA is available.

@@ -80,14 +80,14 @@ r'''
 运行结果: / 実行結果:
 Using device: cuda
 epoch 1
-accuracy=0.964286, avg_loss=0.327875
+accuracy=0.910714, avg_loss=0.385639
 epoch 2
-accuracy=0.973214, avg_loss=0.159297
+accuracy=0.955357, avg_loss=0.179846
 epoch 3
-accuracy=1.000000, avg_loss=0.092211
+accuracy=1.000000, avg_loss=0.104126
 epoch 4
-accuracy=0.991071, avg_loss=0.065999
+accuracy=1.000000, avg_loss=0.075250
 epoch 5
-accuracy=1.000000, avg_loss=0.053455
+accuracy=1.000000, avg_loss=0.057103
 saved to: C:\Users\Administrator\Desktop\100ノック\Chapter 8\tutorial08_model.pth
 '''

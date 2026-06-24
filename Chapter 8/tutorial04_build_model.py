@@ -31,11 +31,9 @@ def main():  # 定义主函数 / メイン関数を定義する
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")  # 自动选择设备 / デバイスを自動選択する
     model = NeuralNetwork().to(device)  # 创建模型并移动到设备 / モデルを作ってデバイスへ移す
     x = torch.rand(1, 28, 28, device=device)  # 创建一张随机图像 / 乱数画像を1枚作る
-    logits = model(x)  # 执行前向计算 / 順伝播を実行する
-    prediction = logits.argmax(dim=1)  # 取最大logit作为预测类别 / 最大logitを予測クラスにする
+    model(x)  # 执行前向计算 / 順伝播を実行する
     print(f"Using device: {device}")  # 输出设备 / デバイスを出力する
     print(model)  # 输出模型结构 / モデル構造を出力する
-    print(f"predicted class: {prediction.item()}")  # 输出预测类别 / 予測クラスを出力する
 
 
 if __name__ == "__main__":  # 直接运行时执行 / 直接実行された場合だけ動かす
@@ -54,5 +52,4 @@ NeuralNetwork(
     (4): Linear(in_features=512, out_features=10, bias=True)
   )
 )
-predicted class: 7
 '''

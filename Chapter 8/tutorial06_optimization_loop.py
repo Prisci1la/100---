@@ -49,9 +49,9 @@ if __name__ == "__main__":  # 直接运行时执行 / 直接実行された場�
 r'''
 运行结果: / 実行結果:
 Using device: cuda
-epoch 1: loss=0.577818
-epoch 2: loss=0.422926
-epoch 3: loss=0.333147
-epoch 4: loss=0.271214
-epoch 5: loss=0.226348
+epoch 1: loss=0.500645
+epoch 2: loss=0.330638
+epoch 3: loss=0.255805
+epoch 4: loss=0.213248
+epoch 5: loss=0.185070
 '''

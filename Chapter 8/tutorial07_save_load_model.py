@@ -33,7 +33,7 @@ def main():  # 定义主函数 / メイン関数を定義する
 
     print(f"Using device: {device}")  # 输出设备 / デバイスを出力する
     print(f"saved to: {save_path}")  # 输出保存路径 / 保存パスを出力する
-    print(f"output: {y}")  # 输出预测结果 / 予測結果を出力する
+    print(f"output shape: {y.shape}")  # 输出预测结果形状 / 予測結果の形状を出力する
 
 
 if __name__ == "__main__":  # 直接运行时执行 / 直接実行された場合だけ動かす
@@ -43,5 +43,5 @@ r'''
 运行结果: / 実行結果:
 Using device: cuda
 saved to: C:\Users\Administrator\Desktop\100ノック\Chapter 8\tutorial07_model.pth
-output: tensor([[ 0.0521, -0.4180]], device='cuda:0', grad_fn=<AddmmBackward0>)
+output shape: torch.Size([1, 2])
 '''
