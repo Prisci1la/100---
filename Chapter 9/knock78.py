@@ -70,3 +70,16 @@ def main():  # 定义主函数 / メイン関数を定義する
 if __name__ == "__main__":  # 直接运行时执行 / 直接実行された場合だけ動かす
     main()  # 调用主函数 / メイン関数を呼び出す
 
+r'''
+运行结果: / 実行結果:
+==================================================
+Knock 78: Fine-tune Embeddings
+==================================================
+device: cuda
+embedding trainable: True
+epoch 01: train_loss=0.671959, dev_accuracy=0.545872
+epoch 02: train_loss=0.631614, dev_accuracy=0.612385
+epoch 03: train_loss=0.581570, dev_accuracy=0.705275
+epoch 04: train_loss=0.526715, dev_accuracy=0.746560
+epoch 05: train_loss=0.476308, dev_accuracy=0.769495
+'''
