@@ -78,28 +78,3 @@ def main():  # 定义主函数 / メイン関数を定義する
 if __name__ == "__main__":  # 直接运行时执行 / 直接実行された場合だけ動かす
     main()  # 调用主函数 / メイン関数を呼び出す
 
-r'''
-===== Codex 运行结果 2026-06-28 =====
-Command: python knock79.py
-Exit code: 0, elapsed: 8.02s
-终端输出节选:
-==================================================
-Knock 79: MLP BoW Classifier
-==================================================
-device: cuda
-MLPBoWClassifier(
-  (embedding): Embedding(50001, 300, padding_idx=0)
-  (classifier): Sequential(
-    (0): Linear(in_features=300, out_features=128, bias=True)
-    (1): ReLU()
-    (2): Dropout(p=0.3, inplace=False)
-    (3): Linear(in_features=128, out_features=1, bias=True)
-  )
-)
-epoch 01: train_loss=0.460982, dev_accuracy=0.778670
-epoch 02: train_loss=0.393069, dev_accuracy=0.782110
-epoch 03: train_loss=0.383943, dev_accuracy=0.792431
-epoch 04: train_loss=0.378965, dev_accuracy=0.784404
-epoch 05: train_loss=0.373477, dev_accuracy=0.797018
-===== End Codex 运行结果 =====
-'''

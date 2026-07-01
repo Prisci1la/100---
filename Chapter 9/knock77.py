@@ -69,20 +69,3 @@ def main():  # 定义主函数 / メイン関数を定義する
 if __name__ == "__main__":  # 直接运行时执行 / 直接実行された場合だけ動かす
     main()  # 调用主函数 / メイン関数を呼び出す
 
-r'''
-===== Codex 运行结果 2026-06-28 =====
-Command: python knock77.py
-Exit code: 0, elapsed: 7.67s
-终端输出节选:
-==================================================
-Knock 77: GPU Training
-==================================================
-device: cuda
-batch size: 256
-epoch 01: train_loss=0.620391, dev_accuracy=0.711009
-epoch 02: train_loss=0.535663, dev_accuracy=0.746560
-epoch 03: train_loss=0.494656, dev_accuracy=0.752294
-epoch 04: train_loss=0.470818, dev_accuracy=0.751147
-epoch 05: train_loss=0.455329, dev_accuracy=0.753440
-===== End Codex 运行结果 =====
-'''

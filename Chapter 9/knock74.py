@@ -98,20 +98,3 @@ def main():  # 定义主函数 / メイン関数を定義する
 if __name__ == "__main__":  # 直接运行时执行 / 直接実行された場合だけ動かす
     main()  # 调用主函数 / メイン関数を呼び出す
 
-r'''
-===== Codex 运行结果 2026-06-28 =====
-Command: python knock74.py
-Exit code: 0, elapsed: 246.71s
-终端输出节选:
-==================================================
-Knock 74: Accuracy
-==================================================
-device: cuda
-epoch 01: train_loss=0.432879
-epoch 02: train_loss=0.403548
-epoch 03: train_loss=0.401023
-epoch 04: train_loss=0.400191
-epoch 05: train_loss=0.399824
-dev accuracy: 0.780963
-===== End Codex 运行结果 =====
-'''
