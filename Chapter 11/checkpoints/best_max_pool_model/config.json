@@ -1,0 +1,4 @@
+{
+  "model_name": "google-bert/bert-base-uncased",
+  "architecture": "max_pool"
+}

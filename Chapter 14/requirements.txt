@@ -1,0 +1,9 @@
+torch
+numpy
+pandas
+tqdm
+sacrebleu
+sentencepiece
+matplotlib
+tensorboard
+flask

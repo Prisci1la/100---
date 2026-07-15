@@ -1,0 +1,9 @@
+torch
+transformers
+trl
+accelerate
+datasets
+evaluate
+tqdm
+peft
+bitsandbytes

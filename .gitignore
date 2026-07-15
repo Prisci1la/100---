@@ -17,3 +17,8 @@ Chapter 6/wordsim353/
 Chapter 7/data/
 Chapter 8/data/
 Chapter 8/*.pth
+Chapter 11/checkpoints/**/pytorch_model.bin
+Chapter 11/checkpoints/**/model.safetensors
+Chapter 12/models/
+Chapter 13/checkpoints/*.pt
+Chapter 14/checkpoints/*.pt
