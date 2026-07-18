@@ -30,7 +30,7 @@ def evaluate(model, loader, device):  # 评价分类器 / 分類器を評価す�
     correct = 0  # 正确数 / 正解数
     total = 0  # 总数 / 総数
     with torch.no_grad():  # 不计算梯度 / 勾配を計算しない
-        for batch in loader:  # 遍历batch / batchを走査する
+        for batch in tqdm(loader, desc="eval", leave=False):  # 遍历batch / batchを走査する
             labels = batch.pop("labels").to(device)  # 取出标签 / ラベルを取り出す
             batch = {key: value.to(device) for key, value in batch.items()}  # 移动输入 / 入力を移動する
             _loss, logits = model(**batch, labels=labels)  # 前向计算 / 順伝播を行う
@@ -62,6 +62,7 @@ def main():  # 定义主函数 / メイン関数を定義する
     print("=" * 50)  # 输出分隔线 / 区切り線を出力する
     print("Knock 97: Embedding-based Sentiment")  # 输出标题 / タイトルを出力する
     print("=" * 50)  # 输出分隔线 / 区切り線を出力する
+    print(f"device: {device}, train: {len(train_rows)}, dev: {len(dev_rows)}, batch_size: {args.batch_size}")  # 输出设置 / 設定を出力する
     for epoch in range(1, args.epochs + 1):  # 按epoch循环 / epochごとに繰り返す
         model.train()  # 训练模式 / 学習モード
         total_loss = 0.0  # 累计loss / lossを累積する

@@ -33,6 +33,7 @@ def main():  # 定义主函数 / メイン関数を定義する
         parser.error("--load-in-4bit requires --use-lora for trainable adapters")  # 明确报错 / 明確にエラーを出す
     tokenizer = load_tokenizer(args.model_name)  # 读取tokenizer / tokenizerを読む
     rows = read_sst2_rows(args.train_path, args.max_train_examples)  # 读取训练数据 / 訓練データを読む
+    print(f"device: auto, train: {len(rows)}, epochs: {args.epochs}, batch_size: {args.batch_size}, grad_accum: {args.gradient_accumulation_steps}")  # 输出设置 / 設定を出力する
     dataset = to_hf_dataset(make_preference_rows(rows))  # 创建DPO数据 / DPOデータを作る
     dpo_args = DPOConfig(  # 创建DPO训练参数 / DPO学習引数を作る
         output_dir=args.output_dir,
@@ -42,6 +43,7 @@ def main():  # 定义主函数 / メイン関数を定義する
         learning_rate=args.lr,
         logging_steps=10,
         save_strategy="epoch",
+        disable_tqdm=False,
         report_to="none",
         max_length=256,
         model_init_kwargs={"quantization_config": build_4bit_config(args.compute_dtype), "device_map": "auto"} if args.load_in_4bit else None,

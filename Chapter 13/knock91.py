@@ -40,6 +40,7 @@ def main():  # 主函数 / メイン関数
     print("=" * 50)  # 分隔线 / 区切り線
     print("Knock 91: Train Transformer MT")  # 标题 / タイトル
     print("=" * 50)  # 分隔线 / 区切り線
+    print(f"device: {device}, train: {len(src_lines)}, batch_size: {args.batch_size}, epochs: {args.epochs}")  # 输出设置 / 設定を出力
     for epoch in range(1, args.epochs + 1):  # epoch循环 / epochループ
         loss = train_epoch(model, loader, optimizer, loss_fn, device)  # 学习一轮 / 1epoch学習
         print(f"epoch {epoch:02d}: loss={loss:.6f}")  # 输出loss / lossを出力

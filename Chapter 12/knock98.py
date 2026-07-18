@@ -43,6 +43,7 @@ def main():  # 定义主函数 / メイン関数を定義する
         model = apply_lora(model, args.lora_r, args.lora_alpha, args.lora_dropout, prepare_for_kbit=args.load_in_4bit)  # 注入LoRA / LoRAを注入する
         model.print_trainable_parameters()  # 输出可训练参数 / 学習可能パラメータを出力する
     rows = read_sst2_rows(args.train_path, args.max_train_examples)  # 读取训练数据 / 訓練データを読む
+    print(f"device: auto, train: {len(rows)}, epochs: {args.epochs}, batch_size: {args.batch_size}, grad_accum: {args.gradient_accumulation_steps}")  # 输出设置 / 設定を出力する
     dataset = tokenize_dataset(to_hf_dataset(make_lm_rows(rows)), tokenizer)  # 构造并tokenize数据 / データを作ってtokenizeする
     collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False)  # 因果LM用collator / 因果LM用collator
     training_args = TrainingArguments(  # 创建训练参数 / 学習引数を作る
@@ -53,6 +54,7 @@ def main():  # 定义主函数 / メイン関数を定義する
         learning_rate=args.lr,
         save_strategy="epoch",
         logging_steps=10,
+        disable_tqdm=False,
         report_to="none",
     )
     trainer = Trainer(model=model, args=training_args, train_dataset=dataset, data_collator=collator, processing_class=tokenizer)  # 创建Trainer / Trainerを作る

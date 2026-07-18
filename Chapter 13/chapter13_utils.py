@@ -92,7 +92,7 @@ def preprocess_split(kftt_dir, split, out_dir=PROCESSED_DIR, max_lines=None):  #
     out_en = out_dir / f"{split}.en.tok"  # 输出英语文件 / 英語出力ファイル
     count = 0  # 行数计数 / 行数カウント
     with ja_path.open(encoding="utf-8") as ja_file, en_path.open(encoding="utf-8") as en_file, out_ja.open("w", encoding="utf-8") as ja_out, out_en.open("w", encoding="utf-8") as en_out:  # 打开文件 / ファイルを開く
-        for ja_line, en_line in zip(ja_file, en_file):  # 遍历平行句 / 対訳文を走査する
+        for ja_line, en_line in tqdm(zip(ja_file, en_file), desc=f"preprocess {split}", leave=False):  # 遍历平行句 / 対訳文を走査する
             ja_tokens = tokenize_ja(ja_line, tagger)  # 日语分词 / 日本語を分かち書きする
             en_tokens = tokenize_en(en_line)  # 英语分词 / 英語を分かち書きする
             if not ja_tokens or not en_tokens:  # 空句跳过 / 空文は飛ばす
