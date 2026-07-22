@@ -58,6 +58,15 @@ def make_preference_rows(rows):  # 构造DPO偏好数据 / DPO選好データを
     return items  # 返回偏好样本 / 選好サンプルを返す
 
 
+def preview_preference_rows(preference_rows, max_examples=10):  # 输出偏好样例 / 選好サンプルを出力する
+    print(f"\nPreference preview on {min(max_examples, len(preference_rows))} train examples:")  # 输出标题 / 見出しを出力する
+    for index, row in enumerate(preference_rows[:max_examples], start=1):  # 遍历前几个样本 / 先頭サンプルを走査する
+        prompt = row["prompt"].replace("\n", " ")[:90]  # 截断prompt / promptを切り詰める
+        chosen = row["chosen"].strip()  # 正确回答 / 望ましい応答
+        rejected = row["rejected"].strip()  # 错误回答 / 望ましくない応答
+        print(f"{index:02d}. prompt={prompt}\tchosen={chosen}\trejected={rejected}")  # 输出样例 / サンプルを出力する
+
+
 class PreferenceDataset(Dataset):  # 手写DPO用Dataset / 手書きDPO用Dataset
     def __init__(self, rows, tokenizer, max_length=256):  # 初始化 / 初期化
         self.rows = rows  # 保存偏好样本 / 選好サンプルを保存
@@ -254,11 +263,14 @@ def main():  # 定义主函数 / メイン関数を定義する
     force_legacy = {"auto": None, "on": True, "off": False}[args.legacy_torch]  # 旧torch模式 / 旧torchモード
     if should_use_legacy_torch(force_legacy):  # torch 1.5兼容路径 / torch 1.5互換経路
         print(f"device: manual, train: {len(rows)}, epochs: {args.epochs}, batch_size: {args.batch_size}, grad_accum: {args.gradient_accumulation_steps}")
+        preview_preference_rows(make_preference_rows(rows))  # 输出偏好样例 / 選好サンプルを出力する
         legacy_train(args, tokenizer, rows)  # 手写DPO / 手書きDPO
         return
     from trl import DPOConfig, DPOTrainer  # DPO相关类 / DPO関連クラス
     print(f"device: auto, train: {len(rows)}, epochs: {args.epochs}, batch_size: {args.batch_size}, grad_accum: {args.gradient_accumulation_steps}")  # 输出设置 / 設定を出力する
-    dataset = to_hf_dataset(make_preference_rows(rows))  # 创建DPO数据 / DPOデータを作る
+    preference_rows = make_preference_rows(rows)  # 创建DPO数据 / DPOデータを作る
+    preview_preference_rows(preference_rows)  # 输出偏好样例 / 選好サンプルを出力する
+    dataset = to_hf_dataset(preference_rows)  # 转为HF Dataset / HF Datasetへ変換する
     dpo_args = DPOConfig(  # 创建DPO训练参数 / DPO学習引数を作る
         output_dir=args.output_dir,
         per_device_train_batch_size=args.batch_size,
@@ -302,3 +314,14 @@ if __name__ == "__main__":  # 直接运行时执行 / 直接実行時のみ動�
 # progress excerpt: epoch 1 reached 1000/1000 in about 02:08, final displayed speed about 7.80 it/s, loss=0.807, step=125.
 # near the end, loss values mostly stayed around 0.6-0.8 with occasional spikes.
 # model saved to Chapter 12/models/dpo_sentiment_gpt2.
+# Preference preview on 10 train examples:
+# 01. prompt=Review: hide new secretions from the parental units  Sentiment:    chosen=negative    rejected=positive
+# 02. prompt=Review: contains no wit , only labored gags  Sentiment:    chosen=negative    rejected=positive
+# 03. prompt=Review: that loves its characters and communicates something rather beautiful about human  Sentiment:    chosen=positive    rejected=negative
+# 04. prompt=Review: remains utterly satisfied to remain the same throughout  Sentiment:    chosen=negative    rejected=positive
+# 05. prompt=Review: on the worst revenge-of-the-nerds clichés the filmmakers could dredge up  Sentiment:    chosen=negative    rejected=positive
+# 06. prompt=Review: that 's far too tragic to merit such superficial treatment  Sentiment:    chosen=negative    rejected=positive
+# 07. prompt=Review: demonstrates that the director of such hollywood blockbusters as patriot games can  Sentiment:    chosen=positive    rejected=negative
+# 08. prompt=Review: of saucy  Sentiment:    chosen=positive    rejected=negative
+# 09. prompt=Review: a depressed fifteen-year-old 's suicidal poetry  Sentiment:    chosen=negative    rejected=positive
+# 10. prompt=Review: are more deeply thought through than in most ` right-thinking ' films  Sentiment:    chosen=positive    rejected=negative
