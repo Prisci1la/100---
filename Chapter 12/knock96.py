@@ -37,3 +37,9 @@ def main():  # 定义主函数 / メイン関数を定義する
 if __name__ == "__main__":  # 直接运行时执行 / 直接実行時のみ動かす
     main()  # 调用主函数 / メイン関数を呼ぶ
 
+
+
+# device: cuda; prompt-based zero/few-shot sentiment classification on 200 SST-2 examples.
+# examples: 200
+# accuracy: 0.735000
+# Result is usable as a baseline but weaker than the fine-tuned classifier in knock97.

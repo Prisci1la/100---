@@ -9,6 +9,7 @@ from __future__ import annotations  # 延迟类型注解的求值 / 型注釈の
 
 import json  # JSON保存库 / JSON保存ライブラリ
 import math  # 数学函数 / 数学関数
+import os  # 环境变量 / 環境変数
 import tarfile  # tar.gz展开库 / tar.gz展開ライブラリ
 import urllib.request  # 下载库 / ダウンロードライブラリ
 from collections import Counter  # 词频统计 / 語彙頻度集計
@@ -16,6 +17,7 @@ from pathlib import Path  # 路径处理 / パス処理
 
 import sacrebleu  # BLEU计算库 / BLEU計算ライブラリ
 import torch  # PyTorch / PyTorch
+import torch.distributed as dist  # 分布式训练 / 分散学習
 from torch import nn  # 神经网络模块 / ニューラルネットワークモジュール
 from torch.utils.data import DataLoader, Dataset  # 数据工具 / データツール
 from tqdm.auto import tqdm  # 进度条 / 進捗バー
@@ -36,6 +38,32 @@ SPECIALS = [PAD, BOS, EOS, UNK]  # 特殊token列表 / 特殊token一覧
 
 def get_device():  # 获取可用设备 / 利用可能なデバイスを取得する
     return torch.device("cuda" if torch.cuda.is_available() else "cpu")  # 有GPU就用CUDA / GPUがあればCUDAを使う
+
+
+def setup_distributed():  # 初始化torchrun分布式环境 / torchrun分散環境を初期化する
+    if "RANK" not in os.environ or "WORLD_SIZE" not in os.environ:
+        return False, 0, 0, 1
+    rank = int(os.environ["RANK"])
+    local_rank = int(os.environ.get("LOCAL_RANK", 0))
+    world_size = int(os.environ["WORLD_SIZE"])
+    if torch.cuda.is_available():
+        torch.cuda.set_device(local_rank)
+    if not dist.is_initialized():
+        dist.init_process_group(backend="nccl" if torch.cuda.is_available() else "gloo")
+    return True, rank, local_rank, world_size
+
+
+def cleanup_distributed():  # 关闭分布式环境 / 分散環境を閉じる
+    if dist.is_available() and dist.is_initialized():
+        dist.destroy_process_group()
+
+
+def is_main_process():  # 是否主进程 / 主プロセスかどうか
+    return not (dist.is_available() and dist.is_initialized()) or dist.get_rank() == 0
+
+
+def unwrap_model(model):  # 取得DDP内部模型 / DDP内部モデルを取得する
+    return model.module if hasattr(model, "module") else model
 
 
 def download_kftt(url=KFTT_URL, archive_path=RAW_DIR / "kftt-data-1.0.tar.gz"):  # 下载KFTT / KFTTをダウンロードする
@@ -190,7 +218,7 @@ class TransformerMT(nn.Module):  # Transformer翻译模型 / Transformer翻訳�
     def forward(self, src, tgt, src_key_padding_mask=None, tgt_key_padding_mask=None, memory_key_padding_mask=None):  # 前向计算 / 順伝播
         src_emb = self.positional_encoding(self.src_embedding(src) * math.sqrt(self.emb_size))  # 源embedding / 入力embedding
         tgt_emb = self.positional_encoding(self.tgt_embedding(tgt) * math.sqrt(self.emb_size))  # 目标embedding / 目標embedding
-        tgt_mask = nn.Transformer.generate_square_subsequent_mask(tgt.size(0), device=tgt.device)  # 未来mask / 未来mask
+        tgt_mask = create_subsequent_mask(tgt.size(0), tgt.device)  # 未来mask / 未来mask
         out = self.transformer(src_emb, tgt_emb, tgt_mask=tgt_mask, src_key_padding_mask=src_key_padding_mask, tgt_key_padding_mask=tgt_key_padding_mask, memory_key_padding_mask=memory_key_padding_mask)  # Transformer计算 / Transformer計算
         return self.generator(out)  # 返回logits / logitsを返す
 
@@ -199,7 +227,11 @@ def create_padding_mask(seq, pad_id=0):  # 创建padding mask / padding maskを�
     return (seq == pad_id).transpose(0, 1)  # batch x seq_len / batch x seq_len
 
 
-def train_epoch(model, loader, optimizer, loss_fn, device):  # 训练一轮 / 1epoch学習する
+def create_subsequent_mask(size, device):  # 创建decoder未来mask / decoder未来maskを作る
+    return torch.triu(torch.full((size, size), float("-inf"), device=device), diagonal=1)
+
+
+def train_epoch(model, loader, optimizer, loss_fn, device, reduce_distributed=True):  # 训练一轮 / 1epoch学習する
     model.train()  # 训练模式 / 学習モード
     total_loss = 0.0  # 累计loss / lossを累積する
     for src, tgt in tqdm(loader, desc="train", leave=False):  # 遍历batch / batchを走査する
@@ -212,7 +244,10 @@ def train_epoch(model, loader, optimizer, loss_fn, device):  # 训练一轮 / 1e
         loss.backward()  # 反向传播 / 逆伝播
         optimizer.step()  # 更新参数 / パラメータ更新
         total_loss += loss.item()  # 累加loss / lossを加算する
-    return total_loss / max(len(loader), 1)  # 平均loss / 平均loss
+    stats = torch.tensor([total_loss, len(loader)], dtype=torch.float64, device=device)  # 统计 / 統計
+    if reduce_distributed and dist.is_available() and dist.is_initialized():
+        dist.all_reduce(stats, op=dist.ReduceOp.SUM)
+    return (stats[0] / stats[1].clamp(min=1)).item()  # 平均loss / 平均loss
 
 
 def greedy_decode(model, src, src_vocab, tgt_vocab, max_len=80, device=None):  # greedy翻译 / greedy翻訳
@@ -232,7 +267,7 @@ def greedy_decode(model, src, src_vocab, tgt_vocab, max_len=80, device=None):  #
 
 def save_checkpoint(path, model, src_vocab, tgt_vocab, config):  # 保存checkpoint / checkpointを保存する
     Path(path).parent.mkdir(parents=True, exist_ok=True)  # 创建目录 / ディレクトリを作る
-    torch.save({"model_state": model.state_dict(), "src_vocab": src_vocab, "tgt_vocab": tgt_vocab, "config": config}, path)  # 保存 / 保存する
+    torch.save({"model_state": unwrap_model(model).state_dict(), "src_vocab": src_vocab, "tgt_vocab": tgt_vocab, "config": config}, path)  # 保存 / 保存する
 
 
 def load_checkpoint(path, device=None):  # 读取checkpoint / checkpointを読む

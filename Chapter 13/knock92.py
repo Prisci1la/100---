@@ -33,3 +33,9 @@ def main():  # 主函数 / メイン関数
 if __name__ == "__main__":  # 直接运行 / 直接実行
     main()  # 调用主函数 / メイン関数を呼ぶ
 
+
+# AIX実行結果メモ (2026-07-18, log: ~/100knock/logs/ch13_knock92.log)
+# checkpoint used: Chapter 13/checkpoints/transformer_mt.pt.
+# source tokens: ['京都', 'は', '美しい', '。']
+# output: his secular name was <unk>
+# Observation: translation quality is poor for this example, consistent with the low BLEU in knock93.

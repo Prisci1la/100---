@@ -59,3 +59,18 @@ python knock99.py --host 127.0.0.1 --port 5000
 ```
 
 Chapter 14はChapter 13の `checkpoints/transformer_mt.pt` と前処理済みKFTTを前提にする。
+
+## Multi-GPU on AIX
+
+訓練系はAIXの1台内で複数GPUを使える。
+
+```bash
+torchrun --nproc_per_node=8 knock95.py --vocab-size 8000
+torchrun --nproc_per_node=8 knock96.py --epochs 5
+```
+
+`knock97.py` はDDPではなく、超パラメータの組み合わせをGPUごとに分配して並列実行する。
+
+```bash
+torchrun --nproc_per_node=8 knock97.py --batch-sizes 32,64 --lrs 1e-3,1e-4,1e-5,1e-6 --optimizers adam,adamw,radam
+```

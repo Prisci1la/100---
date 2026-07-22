@@ -9,11 +9,42 @@ from __future__ import annotations  # 延迟类型注解的求值 / 型注釈の
 
 import csv  # TSV读取库 / TSV読み込みライブラリ
 import math  # 数学函数 / 数学関数
+import os  # 环境变量 / 環境変数
 from pathlib import Path  # 路径处理类 / パス処理クラス
 
 import torch  # 导入PyTorch / PyTorchを導入する
+from contextlib import contextmanager  # 上下文管理器 / コンテキストマネージャ
+
+
+if hasattr(torch, "cuda") and hasattr(torch.cuda, "amp") and not hasattr(torch.cuda.amp, "autocast"):  # torch 1.5兼容Transformers / torch 1.5でTransformersを動かす
+    @contextmanager
+    def _noop_autocast(*args, **kwargs):  # 旧torch没有AMP autocast / 旧torchにはAMP autocastがない
+        yield
+
+    torch.cuda.amp.autocast = _noop_autocast  # 补上Transformers导入需要的名字 / Transformers import用に補う
+
+
+if not hasattr(torch.Tensor, "tile"):  # torch 1.5没有Tensor.tile / torch 1.5にはTensor.tileがない
+    def _tensor_tile(self, *dims):  # 兼容Transformers生成代码 / Transformersの生成コードに対応する
+        if len(dims) == 1 and isinstance(dims[0], (tuple, list)):
+            dims = tuple(dims[0])
+        return self.repeat(*dims)
+
+    torch.Tensor.tile = _tensor_tile
+    torch.tile = lambda tensor, *dims: tensor.tile(*dims)
+
 from datasets import Dataset as HFDataset  # Hugging Face Dataset / Hugging Face Dataset
 from torch import nn  # 神经网络模块 / ニューラルネットワークモジュール
+
+
+if "persistent" not in nn.Module.register_buffer.__code__.co_varnames:  # torch 1.5没有persistent参数 / torch 1.5にはpersistent引数がない
+    _original_register_buffer = nn.Module.register_buffer  # 保存原函数 / 元関数を保存する
+
+    def _register_buffer_compat(self, name, tensor, persistent=True):  # 兼容Transformers的persistent参数 / Transformersのpersistent引数に対応する
+        return _original_register_buffer(self, name, tensor)  # torch 1.5忽略persistent / torch 1.5ではpersistentを無視する
+
+    nn.Module.register_buffer = _register_buffer_compat  # 替换为兼容版本 / 互換版へ置換する
+
 from torch.utils.data import DataLoader, Dataset  # PyTorch数据工具 / PyTorchデータツール
 from tqdm.auto import tqdm  # 进度条 / 進捗バー
 from transformers import AutoModel, AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig  # Transformers自动类 / Transformers自動クラス
@@ -40,6 +71,37 @@ def get_device():  # 获取可用设备 / 利用可能なデバイスを取得�
     return torch.device("cuda" if torch.cuda.is_available() else "cpu")  # 有GPU就使用CUDA / GPUがあればCUDAを使う
 
 
+def torch_version_tuple():  # PyTorch版本转元组 / PyTorchバージョンをタプル化する
+    version = torch.__version__.split("+", 1)[0]  # 去掉CUDA后缀 / CUDA接尾辞を外す
+    parts = []  # 初始化版本数字 / バージョン数字を初期化する
+    for item in version.split(".")[:3]:  # 只看前三段 / 最初の3要素だけを見る
+        number = ""  # 初始化数字字符串 / 数字文字列を初期化する
+        for char in item:  # 遍历字符 / 文字を走査する
+            if not char.isdigit():  # 遇到非数字停止 / 数字以外で止める
+                break
+            number += char  # 追加数字 / 数字を追加する
+        parts.append(int(number or 0))  # 保存数字 / 数字を保存する
+    while len(parts) < 3:  # 补齐三段 / 3要素に補う
+        parts.append(0)
+    return tuple(parts)  # 返回版本元组 / バージョンタプルを返す
+
+
+def should_use_legacy_torch(force=None):  # 判断是否走旧torch实现 / 旧torch実装を使うか判定する
+    if force is not None:  # 用户显式指定 / ユーザーが明示した場合
+        return force
+    return torch_version_tuple() < (1, 8, 0)  # torch 1.5等走fallback / torch 1.5などはfallback
+
+
+def get_local_rank():  # torchrun本地rank / torchrunのローカルrank
+    return int(os.environ.get("LOCAL_RANK", 0))  # 默认0 / 既定は0
+
+
+def get_device_map():  # 量化模型的设备映射 / 量子化モデルのデバイス配置
+    if torch.cuda.is_available() and "LOCAL_RANK" in os.environ:
+        return {"": get_local_rank()}
+    return "auto"
+
+
 def load_tokenizer(model_name=MODEL_NAME):  # 读取tokenizer / tokenizerを読み込む
     tokenizer = AutoTokenizer.from_pretrained(model_name)  # 从Hugging Face读取 / Hugging Faceから読む
     if tokenizer.pad_token is None:  # GPT2默认没有PAD / GPT2は既定でPADを持たない
@@ -48,7 +110,7 @@ def load_tokenizer(model_name=MODEL_NAME):  # 读取tokenizer / tokenizerを読�
 
 
 def get_torch_dtype(dtype_name="float16"):  # 字符串转torch dtype / 文字列をtorch dtypeへ変換する
-    mapping = {"float16": torch.float16, "bfloat16": torch.bfloat16, "float32": torch.float32}  # 可选dtype / 選択可能dtype
+    mapping = {"float16": torch.float16, "bfloat16": getattr(torch, "bfloat16", torch.float16), "float32": torch.float32}  # 可选dtype / 選択可能dtype
     return mapping[dtype_name]  # 返回dtype / dtypeを返す
 
 
@@ -91,7 +153,7 @@ def load_causal_lm(model_name=MODEL_NAME, device=None, load_in_4bit=False, compu
         model = AutoModelForCausalLM.from_pretrained(  # 读取量化模型 / 量子化モデルを読み込む
             model_name,
             quantization_config=build_4bit_config(compute_dtype),
-            device_map="auto",
+            device_map=get_device_map(),
         )
     else:
         model = AutoModelForCausalLM.from_pretrained(model_name)  # 读取模型 / モデルを読み込む
@@ -236,6 +298,117 @@ def collate_gpt2_classifier(examples, tokenizer):  # 分类任务batch整理 / �
     batch = tokenizer.pad(features, return_tensors="pt")  # padding / paddingする
     batch["labels"] = torch.tensor([e["labels"] for e in examples], dtype=torch.long)  # 添加标签 / ラベルを追加する
     return batch  # 返回batch / batchを返す
+
+
+def masked_labels(input_ids, attention_mask):  # 为LM构造忽略padding的labels / LM用labelsを作る
+    labels = input_ids.clone()  # 复制输入ID / 入力IDを複製する
+    labels[attention_mask == 0] = -100  # padding位置不计loss / padding位置はlossから外す
+    return labels  # 返回labels / labelsを返す
+
+
+class LMTextDataset(Dataset):  # 手写SFT用Dataset / 手書きSFT用Dataset
+    def __init__(self, rows, tokenizer, max_length=128):  # 初始化 / 初期化
+        self.rows = rows  # 保存文本行 / テキスト行を保存する
+        self.tokenizer = tokenizer  # 保存tokenizer / tokenizerを保存する
+        self.max_length = max_length  # 最大长度 / 最大長
+
+    def __len__(self):  # 样本数 / サンプル数
+        return len(self.rows)
+
+    def __getitem__(self, index):  # 取样本 / サンプルを取る
+        return self.tokenizer(self.rows[index]["text"], truncation=True, max_length=self.max_length)  # 编码 / 符号化する
+
+
+def collate_lm_texts(examples, tokenizer):  # 手写SFT batch整理 / 手書きSFT batch整形
+    batch = tokenizer.pad(examples, return_tensors="pt")  # padding / paddingする
+    batch["labels"] = masked_labels(batch["input_ids"], batch["attention_mask"])  # 添加labels / labelsを足す
+    return batch  # 返回batch / batchを返す
+
+
+class PreferenceDataset(Dataset):  # 手写DPO用Dataset / 手書きDPO用Dataset
+    def __init__(self, rows, tokenizer, max_length=256):  # 初始化 / 初期化
+        self.rows = rows  # 保存偏好样本 / 選好サンプルを保存する
+        self.tokenizer = tokenizer  # 保存tokenizer / tokenizerを保存する
+        self.max_length = max_length  # 最大长度 / 最大長
+
+    def __len__(self):  # 样本数 / サンプル数
+        return len(self.rows)
+
+    def _encode_pair(self, prompt, answer):  # 编码prompt+answer并标出answer位置 / prompt+answerを符号化し応答位置を印付ける
+        prompt_ids = self.tokenizer(prompt, add_special_tokens=False).input_ids  # prompt ID / prompt ID
+        answer_ids = self.tokenizer(answer, add_special_tokens=False).input_ids  # answer ID / answer ID
+        input_ids = (prompt_ids + answer_ids)[: self.max_length]  # 截断 / 切り詰める
+        answer_start = min(len(prompt_ids), len(input_ids))  # answer起点 / 応答開始位置
+        loss_mask = [0] * len(input_ids)  # 初始化mask / maskを初期化する
+        for idx in range(answer_start, len(input_ids)):  # 只训练answer token / 応答tokenだけを見る
+            loss_mask[idx] = 1
+        return {"input_ids": input_ids, "attention_mask": [1] * len(input_ids), "loss_mask": loss_mask}  # 返回编码 / 符号化を返す
+
+    def __getitem__(self, index):  # 取样本 / サンプルを取る
+        row = self.rows[index]  # 取得行 / 行を取得する
+        return {
+            "chosen": self._encode_pair(row["prompt"], row["chosen"]),
+            "rejected": self._encode_pair(row["prompt"], row["rejected"]),
+        }
+
+
+def _pad_encoded_items(items, tokenizer):  # padding编码样本 / 符号化サンプルをpaddingする
+    max_len = max(len(item["input_ids"]) for item in items)  # 最大长度 / 最大長
+    pad_id = tokenizer.pad_token_id  # pad ID / pad ID
+    input_ids, attention_mask, loss_mask = [], [], []  # 初始化列表 / リストを初期化する
+    for item in items:  # 遍历样本 / サンプルを走査する
+        pad_len = max_len - len(item["input_ids"])  # padding长度 / padding長
+        input_ids.append(item["input_ids"] + [pad_id] * pad_len)  # 补input / inputを補う
+        attention_mask.append(item["attention_mask"] + [0] * pad_len)  # 补attention / attentionを補う
+        loss_mask.append(item["loss_mask"] + [0] * pad_len)  # 补loss mask / loss maskを補う
+    return {
+        "input_ids": torch.tensor(input_ids, dtype=torch.long),
+        "attention_mask": torch.tensor(attention_mask, dtype=torch.long),
+        "loss_mask": torch.tensor(loss_mask, dtype=torch.float),
+    }
+
+
+def collate_preferences(examples, tokenizer):  # 手写DPO batch整理 / 手書きDPO batch整形
+    return {
+        "chosen": _pad_encoded_items([example["chosen"] for example in examples], tokenizer),
+        "rejected": _pad_encoded_items([example["rejected"] for example in examples], tokenizer),
+    }
+
+
+def sequence_log_probability(model, batch):  # 计算answer token平均log概率 / 応答token平均log確率を計算する
+    outputs = model(input_ids=batch["input_ids"], attention_mask=batch["attention_mask"])  # 前向 / 順伝播
+    logits = outputs.logits[:, :-1, :]  # 预测下一个token / 次token予測
+    labels = batch["input_ids"][:, 1:]  # 目标token / 目標token
+    mask = batch["loss_mask"][:, 1:] * batch["attention_mask"][:, 1:].float()  # answer mask / 応答mask
+    log_probs = torch.log_softmax(logits, dim=-1)  # log概率 / log確率
+    token_log_probs = log_probs.gather(-1, labels.unsqueeze(-1)).squeeze(-1)  # 目标log概率 / 目標log確率
+    lengths = mask.sum(dim=1).clamp(min=1.0)  # answer长度 / 応答長
+    return (token_log_probs * mask).sum(dim=1) / lengths  # 平均log概率 / 平均log確率
+
+
+def set_trainable_parameters(model, mode="all"):  # 设置可训练范围 / 学習可能範囲を設定する
+    if mode == "all":  # 全参数训练 / 全パラメータ学習
+        for parameter in model.parameters():
+            parameter.requires_grad = True
+        return
+    for parameter in model.parameters():  # 默认先冻结 / まず凍結する
+        parameter.requires_grad = False
+    if mode == "head":  # 只训练LM头 / LM headだけ学習
+        for parameter in model.lm_head.parameters():
+            parameter.requires_grad = True
+    elif mode == "last-block":  # 训练最后Transformer block和LM头 / 最終blockとLM headを学習
+        for parameter in model.transformer.h[-1].parameters():
+            parameter.requires_grad = True
+        for parameter in model.lm_head.parameters():
+            parameter.requires_grad = True
+    else:
+        raise ValueError(f"unknown trainable mode: {mode}")  # 未知模式 / 未知モード
+
+
+def count_trainable_parameters(model):  # 统计可训练参数 / 学習可能パラメータを数える
+    trainable = sum(parameter.numel() for parameter in model.parameters() if parameter.requires_grad)  # 可训练数 / 学習可能数
+    total = sum(parameter.numel() for parameter in model.parameters())  # 总数 / 総数
+    return trainable, total  # 返回统计 / 統計を返す
 
 
 class GPT2EmbeddingClassifier(nn.Module):  # GPT2埋め込み+線形分類器 / GPT2埋め込み+線形分類器

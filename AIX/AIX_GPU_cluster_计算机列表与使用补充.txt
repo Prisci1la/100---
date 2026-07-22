@@ -1,0 +1,261 @@
+AIX GPU Cluster
+table:全計算機リスト
+ IPアドレス	ホスト名	搭載GPU	メモリ容量	CPU情報
+ 172.21.38.86	g05.aix.uec.ac.jp	NVIDIA TITAN X (Pascal) (12195MB)x2	32029MB	(4 core)Intel Xeon E5-1620 v3 3.50GHz
+ 172.21.38.88	g07.aix.uec.ac.jp	NVIDIA TITAN X (Pascal) (12195MB)x2	32029MB	(4 core)Intel Xeon E5-1620 v3 3.50GHz
+ 172.21.38.89	g08.aix.uec.ac.jp	NVIDIA TITAN X (Pascal) (12195MB)x2	32029MB	(4 core)Intel Xeon E5-1620 v3 3.50GHz
+ 172.21.38.90	g09.aix.uec.ac.jp	NVIDIA TITAN X (Pascal) (12195MB)x2	32029MB	(4 core)Intel Xeon E5-1620 v3 3.50GHz
+ 172.21.38.91	g10.aix.uec.ac.jp	NVIDIA TITAN X (Pascal) (12195MB)x2	32029MB	(4 core)Intel Xeon E5-1620 v3 3.50GHz
+ 172.21.38.98	g17.aix.uec.ac.jp	NVIDIA TITAN RTX (24219MB)x2	64232MB	(8 core)Intel Core i9-9900K 3.60GHz
+ 172.21.38.99	g18.aix.uec.ac.jp	NVIDIA TITAN RTX (24219MB)x2	64229MB	(8 core)Intel Core i9-9900K 3.60GHz
+ 172.21.38.100	g19.aix.uec.ac.jp	NVIDIA TITAN RTX (24219MB)x2	64229MB	(8 core)Intel Core i9-9900K 3.60GHz
+ 172.21.38.101	g20.aix.uec.ac.jp	NVIDIA TITAN RTX (24219MB)x2	64229MB	(8 core)Intel Core i9-9900KS 4.00GHz
+ 172.21.38.102	g21.aix.uec.ac.jp	NVIDIA Quadro RTX 8000 (48601MB)x1	192096MB	(4 core)Intel Xeon Silver 4112 2.60GHz
+ 172.21.38.183	a31.aix.uec.ac.jp	NVIDIA RTX 2080 Ti (11019MB)x3	54243MB	(2 core)Intel Xeon Silver 4210 2.20GHz
+ 172.21.38.153	a01.aix.uec.ac.jp	NVIDIA RTX 2080 Ti (11019MB)x4	90530MB	(4 core)Intel Xeon Silver 4210 2.20GHz
+ 172.21.38.160	a08.aix.uec.ac.jp	NVIDIA RTX 2080 Ti (11019MB)x4	90530MB	(4 core)Intel Xeon Silver 4210 2.20GHz
+ 172.21.38.177	a25.aix.uec.ac.jp	NVIDIA RTX 2080 Ti (11019MB)x4	90530MB	(4 core)Intel Xeon Silver 4210 2.20GHz
+ 172.21.38.178	a26.aix.uec.ac.jp	NVIDIA RTX 2080 Ti (11019MB)x4	90530MB	(4 core)Intel Xeon Silver 4210 2.20GHz
+ 172.21.38.184	a32.aix.uec.ac.jp	NVIDIA RTX 2080 Ti (11019MB)x4	64322MB	(4 core)Intel Xeon Silver 4210 2.20GHz
+ 172.21.38.181	a29.aix.uec.ac.jp	NVIDIA RTX 2080 Ti (11019MB)x8	192087MB	(10 core)Intel Xeon Silver 4210 2.20GHz
+ 172.21.38.103	g22.aix.uec.ac.jp	NVIDIA RTX 3090 (24576MB)x8	257608MB	(16 core)Intel Xeon Silver 4314 2.40GHz
+ 172.21.38.109	g23.aix.uec.ac.jp	NVIDIA RTX 3090 (24576MB)x8	257608MB	(16 core)Intel Xeon Silver 4314 2.40GHz
+ 172.21.38.110	g24.aix.uec.ac.jp	NVIDIA RTX A6000 (49140MB)x8	257608MB	(16 core)Intel Xeon Silver 4314 2.40GHz
+ 172.21.38.81	g00.aix.uec.ac.jp	NVIDIA RTX PRO 6000x4 + H200x2	515619MB	(8 core)INTEL XEON GOLD 5515+
+
+
+[* 利用登録]
+		[アカウント登録ページ http://g01.aix.uec.ac.jp/regist/] (要全学認証)にアクセスして登録．
+			学内 or VPNのみ
+		AIX関係者の合言葉 aix-agora を入力すると，[利用規則 http://g01.aix.uec.ac.jp/inst.txt]の確認とユーザ情報登録ページへ遷移
+		利用者登録メールが gpu-admin@aix.uec.ac.jp から届くことを確認．
+		[ここ http://g01.aix.uec.ac.jp/]にGPUサーバの利用状況が表示されるので，未使用のサーバのjupyterhub リンクをクリックして，全学ID認証でjupyterhub にログイン．http://g01.aix.uec.ac.jp/
+
+
+		利用方法の情報は[こちら http://g01.aix.uec.ac.jp/inst.txt]
+			SSHで接続するのが楽なのでおすすめです
+		[* 管理者(柳井先生)にメールで連絡し，Dockerグループへの追加を依頼することを強く推奨]
+			管理者連絡用メールアドレス：gpu-admin@aix.uec.ac.jp
+			詳細は[利用方法 http://g01.aix.uec.ac.jp/inst.txt]
+
+[* シェルの変更(任意)]
+		デフォルトのシェルがcshなので，起動するシェルをbashに変更することを推奨
+			ホームフォルダの.cshrcの末尾に以下を記入
+				$ exec /bin/bash
+[* Docker]
+ 	個々で自由にソフトやライブラリのインストールができるため，[Docker]を使用することを勧めます
+ 	以下がDockerfileの設定例
+ 	code:Dockerfile
+ 	 # https://hub.docker.com/r/pytorch/pytorch/tags で適切なCUDAおよびPyTorchのバージョンを探して記入
+ 	 # 最後がdevelである必要があるらしい．
+ 	 # CUDAのバージョンはnvidia-smiコマンドで表示されるCUDA Version以下にする必要がある．
+ 	 FROM  pytorch/pytorch:1.12.1-cuda11.3-cudnn8-devel
+   
+   # Proxyの設定
+   ENV http_proxy http://proxy.uec.ac.jp:8080/
+  	ENV https_proxy http://proxy.uec.ac.jp:8080/
+   
+   # tz-dataのインストールで停止するのを防止するための設定
+   ENV TZ=Asia/Tokyo
+   RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+   
+   # 以下は自分のアカウントに合わせて書く
+   ARG USERNAME=(自分のAIX GPU ClusterのID)
+   # 「$ id (自分のAIX GPU ClusterのID)」で表示されるUIDとGID
+   ARG UID=(自分のUID)
+   ARG GID=(自分のGID)
+   
+   ARG GROUPNAME="aix-student"
+   ARG WORKDIR=/usr/src/app
+   ENV PYTHONPATH $WORKDIR
+   
+   # 自分をDocker内のユーザーとして追加
+   RUN groupadd -g $GID $GROUPNAME
+   RUN useradd -m --uid $UID --gid $GID -s /bin/bash $USERNAME
+   
+   # フォルダ作成＆権限設定
+   RUN mkdir -p $WORKDIR
+   RUN chown -R $UID:$GID $WORKDIR
+   
+   # apt-getのproxy設定
+   RUN echo 'Acquire::http::proxy "http://proxy.uec.ac.jp:8080/";' >> /etc/apt/apt.conf
+   RUN echo 'Acquire::https::proxy "http://proxy.uec.ac.jp:8080/";' >> /etc/apt/apt.conf
+   
+   # 各自好きなものをインストールしたい場合はapt-get installのあとに追加すること
+   RUN apt-get update
+   RUN apt-get install -y build-essential wget unzip git gcc g++ curl make cmake nano
+   RUN apt-get autoremove -y && apt-get clean
+   
+   # ユーザーのbinaryディレクトリをパスに追加
+   ENV PATH /home/$USERNAME/.local/bin:$PATH
+   
+   # ユーザー切り替え
+   USER $USERNAME
+   
+   # 作業ディレクトリ設定
+   WORKDIR $WORKDIR
+   
+   # pipはユーザディレクトリにインストール
+   RUN pip3 install -U --user pip
+   RUN pip3 install -U --user setuptools
+   
+   # あとはpipで必要なものをインストール。以下は100本ノックで必要なライブラリの例 (未検証)
+   # 他にも必要なものがあれば追加してください
+   RUN pip3 install --user transformers scikit-learn "sacrebleu[ja]" gensim sentencepiece optuna
+   RUN pip3 install --user tensorboard Flask graphviz matplotlib
+		上記Dockerファイルをビルド
+			$ docker build -t 自分の好きなイメージ名 .
+		以降は以下のコマンドでDocker内で作業
+			$ docker run --gpus all -u 16578 --rm  -v $HOME:$HOME --workdir=`pwd` -it 自分の好きなイメージ名 /bin/bash
+				上記コマンドにより，実行時のカレントディレクトリがそのままマウントされる
+				終了はexit
+		注意
+			docker buildに何度も失敗すると，失敗するごとにイメージファイルが蓄積され，ディスクを圧迫する
+			適宜削除すること
+				参考： https://codechord.com/2019/08/docker-images-none-dangling/
+		その他参考情報
+			[docker run(コンテナ作成)する時のオプションあれこれ https://qiita.com/shimo_yama/items/d0c42394689132fcb4b6]
+			[Dockerfile のベスト・プラクティス(公式) https://docs.docker.jp/develop/develop-images/dockerfile_best-practices.html]
+			[Dockerfileのベストプラクティス(Qiita) https://qiita.com/Tsuyozo/items/c706a04848c3fbbaf055]
+
+
+[* Dockerを使用しない場合の環境設定]
+		pyenvで環境を作るとインストールできないライブラリ(gensimなど)があるので非推奨
+		システムにデフォルトでインストールされているPythonを使い，venvで環境をつくりましょう 
+			[venv: Python 仮想環境管理 https://qiita.com/fiftystorm36/items/b2fd47cf32c7694adc2e]
+			シェルがcshの場合，venvではbin/activateの代わりにbin/activate.cshを使用する
+    $ source venv/bin/activate.csh
+			CUDAは最新版なのでPyTorchは最新のものが使えます
+				$ pip install torch torchvision --proxy=http://proxy.uec.ac.jp:8080/
+		pyenvを使いたい場合もシェルがcshであることに注意
+			参考：cshの場合のpyenvのインストール方法
+ 			code:.cshrc
+ 		 	# gitのproxy設定
+ 		 	$ git config --global http.proxy http://proxy.uec.ac.jp:8080/ 
+     $ git config --global https.proxy http://proxy.uec.ac.jp:8080/ 
+ 		 	# pyenvのインストール
+    	$ cd
+    	$ git clone https://github.com/pyenv/pyenv.git ~/.pyenv
+    	# .cshrcの更新
+    	$ echo 'setenv http_proxy http://proxy.uec.ac.jp:8080/' >> ~/.cshrc
+     $ echo 'setenv https_proxy http://proxy.uec.ac.jp:8080/' >> ~/.cshrc
+     $ echo 'setenv PYENV_ROOT $HOME/.pyenv' >> ~/.cshrc 
+     $ echo 'setenv PATH $PYENV_ROOT/shims:$PYENV_ROOT/bin:$PATH' >> ~/.cshrc
+     $ echo 'setenv TMPDIR $HOME/tmp' >> ~/.cshrc
+     $ echo 'pyenv rehash' >> ~/.cshrc
+     $ source .cshrc
+     # pyenvがインストールできたかを確認
+     $ pyenv -v 
+			pyenvを使う場合の注意点
+				Python3.7以降はライブラリがないのでビルドに失敗します．3.6系をインストールしてください
+
+
+[* VSCodeによるリモート開発]
+		鍵はLinuxで生成したものとは共有できない？ので，Windowsで新たに生成する
+			Windowsボタン→「サービス」からサービスを起動
+				「OpenSSH Authentication Agent」をダブルクリックし，スタートアップの種類を「自動」にして下の「開始」をクリックして実行
+			Windows PowerShell等でssh-keygenで鍵を生成
+			あとはLinuxの場合と同じ
+		VSCodeの設定
+			VSCodeのコマンドパレット(F1を押す)にRemote-SSH: Open Configuration File...を入力し，クリック
+			「C:\ ... \config」をクリック
+			以下のように記入
+				code:config
+				 Host AIXのいずれかのホスト名 (g**)
+       HostName ホストのIPアドレス
+       User 自分のユーザ名
+       IdentityFile (Powershellで生成した鍵．C:\Users\(ユーザ名)\ 以下に置くのがよい)
+
+[* ファイルの転送]
+	研究室サーバとAIXサーバ間の巨大なファイルのやり取りはscpを使う
+		[よく使うUnixコマンド]
+		GUIでやりたいなら[WinSCP https://winscp.net/eng/docs/lang:jp]や[Filezilla https://filezilla-project.org/]などを使うと良い
+	ソースコードはGithubを経由すると楽
+
+[* pyenvで好みのバージョンのPythonを入れる方法]
+	デフォルトで入っていないbzip2, readline, xz, sqliteをインストールしてパスを通す必要がある
+	以下はホームディレクトリ直下にlibフォルダを作成し，そこにすべてインストールする例
+		シェルはbash，Python 3.11.0のインストールができることを確認済み
+code:install.sh
+ cd
+ mkdir lib
+ mkdir tmp
+ cd tmp
+ # bzip2のインストール
+ wget https://www.sourceware.org/pub/bzip2/bzip2-latest.tar.gz
+ tar xvfz bzip2-latest.tar.gz
+ cd bzip2-1.0.8
+ make install PREFIX={ホームディレクトリのパス}/lib/bzip2
+ cd ..
+ 
+ # readlineのインストール
+	wget http://ftp.gnu.org/gnu/readline/readline-8.2.tar.gz
+ tar xvfz readline-8.2.tar.gz
+ cd readline-8.2
+ ./configure --prefix={ホームディレクトリのパス}/lib/readline
+ make
+ make install
+ cd ..
+ 
+ # xzのインストール
+ wget https://tukaani.org/xz/xz-5.2.8.tar.gz
+ tar xvfz xz-5.2.8.tar.gz
+ cd xz-5.2.8
+ ./configure --prefix={ホームディレクトリのパス}/lib/xz
+ make
+ make install
+ cd ..
+ 
+ #sqliteのインストール
+ wget https://www.sqlite.org/2022/sqlite-autoconf-3400000.tar.gz
+ tar xvfz sqlite-autoconf-3400000.tar.gz
+ cd sqlite-autoconf-3400000
+ ./configure --prefix={ホームディレクトリのパス}/lib/sqlite --enable-editline --enable-readline --enable-session --enable-debug
+ make
+ make install
+ 
+ cd
+ # .bashrcの更新
+ echo 'export PATH=$HOME/lib/sqlite/bin:$HOME/lib/readline/bin:$$HOME/lib/bzip2/bin:$HOME/lib/xz/bin:$PATH' >> ~/.bashrc
+ echo 'export LD_LIBRARY_PATH=$HOME/lib/sqlite/lib:$HOME/lib/readline/lib:$HOME/lib/bzip2/lib:$HOME/lib/xz/lib:$LD_LIBRARY_PATH' >> ~/.bashrc
+ echo 'export LDFLAGS="$LDFLAGS -L$HOME/lib/sqlite/lib -L$HOME/lib/readline/lib -L$HOME/lib/bzip2/lib -L$HOME/lib/xz/lib"' >> ~/.bashrc
+ echo 'export CPPFLAGS="$CPPFLAGS -I$HOME/lib/sqlite/include -I$HOME/lib/readline/include -I$HOME/lib/bzip2/include -I$HOME/lib/xz/include"' >> ~/.bashrc
+ echo 'export CFLAGS="-fPIC"' >> ~/.bashrc
+ source ~/.bashrc
+
+
+[* AIXサーバでデフォルトのPython以外を使いたいときの設定]
+　AIXサーバではPandasやtorchvisionなどimportの際にbzip2を使用するライブラリは使えない
+　	bzip2はインストールすれば済むがAIXサーバでbzip2をインストールする権限がない....
+　そこで、自分の作業スペースのみにbzip2やその他必要なツールをダウンロードしてmake
+　pythonもそれに併せて自力でmakeすることでbzip2が使えるようになる
+code::
+ # Bzip2のダウンロード＆ビルド
+ cd
+ wget http://bzip.org/1.0.6/bzip2-1.0.6.tar.gz
+ tar xpzf bzip2-1.0.6.tar.gz
+ cd bzip2-1.0.6
+ make
+ make -f Makefile-libbz2_so
+ make install PREFIX={好きな場所}
+次にpythonをどのファイルを元にビルドするかを指定（tcshに記述する）
+code::tcsh
+ setenv LDFLAGS "-L{Bzip2のビルド時に指定した好きな場所}/lib"
+ setenv CPPFLAGS "-I{Bzip2のビルド時に指定した好きな場所}/include"
+Python本体をダウンロード＆ビルド
+バージョンは基本何でも良いが何故か3.6.6だとエラーで先に進めない
+code::
+  # Pythonのダウンロード＆ビルド
+  cd
+  curl -O https://www.python.org/ftp/python/3.6.5/Python-3.6.5.tar.xz
+  tar Jxf Python-3.6.5.tar.xz
+  cd Python-3.6.2
+  ./configure --prefix={pythonを置きたい場所} --with-ensurepip
+  make
+  make install
+これでPandasなどのライブラリが使えるようになる
+現状Pyenvで管理する方法が分からないため、実行時はいちいち`{pythonを置いた場所}/bin/python3.6.5`のように使うPythonのパスを指定しなくてはならない
+Pyenvで管理できる方法を見つけた方は教えてください
+
+[https://scrapbox.io/files/674fd217cd057f1ac434587c.png]
+

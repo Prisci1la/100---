@@ -1,0 +1,165 @@
+稲葉研究室計算機＆ネットワーク情報
+[https://gyazo.com/d12ea295c19dcf59ec9eb981817be92d]
+
+[* ルータ]
+		グローバルIP：130.153.158.3 (学外からのアクセス不可)
+		ローカルIP：192.168.10.1
+			学生室のPCのIPは192.168.10.***です．
+
+[* GPUクラスタ]
+	研究室のGPUサーバは3つのグループに分かれています．グループ内ではログインIDとパスワード，ファイルが共有されますが，グループ外では共有されません(例えばELIZAグループのユーザinabaとSHRDLUグループのユーザinabaは完全に別のユーザとして扱われます）
+		ELIZAグループ
+			2016年導入のファイルサーバelizaにファイルをすべて配置
+			古くなっているのでSHRDLUグループに徐々に移行
+		SHRDLUグループ
+			2022年導入のファイルサーバshrdluにファイルをすべて配置
+			10GB LANにより接続されているため，ファイルIOが高速
+			今後，新規サーバはこちらのグループにのみ追加
+		NEDOグループ
+			NEDOプロジェクト専用のマシン．現状はjarvisの1台のみ．
+	[* 注意：ファイルサーバでのプログラムの実行およびVSCodeの接続は避けてください]
+		WindowsおよびMacのターミナルからのSSH接続やFileZilla，WinSCPなどを用いた接続は問題ありません
+
+[* ELIZAグループ]
+table:ファイルサーバ
+	IPアドレス	ホスト名	ディスク容量
+	192.168.10.10     	eliza	40TB
+table:GPUサーバ
+	IPアドレス	ホスト名	搭載GPU	メモリ容量	CPU情報	OSバージョン
+	192.168.10.21     	alice     	TITAN X 12GB x 4台 	512GB	Xeon E5-2637 v4 (4 core, 8 thread)(廃止)	18.04.5 LTS
+ 192.168.10.22     	parry     	TITAN X 12GB x 3台 	128GB   	Core i7-5930K  (6 core, 12 thread) (廃止)	16.04.6 LTS
+ 192.168.10.23     	eugene   	TITAN X 12GB x 3台 	128GB   	Core i7-5930K  (6 core, 12 thread) (廃止)	16.04.6 LTS
+ 192.168.10.24     	mitsuku  	TITAN X 12GB x 3台	128GB    	Core i7-5930K  (6 core, 12 thread) (廃止)	16.04.6 LTS
+ 192.168.10.25  	racter  	1080Ti 12GB x 3台	128GB 	Corei7-6870K ((6 core, 12 thread) (廃止)	16.04.6 LTS
+ 192.168.10.26	joan	TITAN X 12GB x 2台	64GB    	Core i7-6700K (4 core, 8 thread) (廃止)	18.04.5 LTS 
+ 192.168.10.27 	meena	TITAN X 12GB x 2台	64GB    	Core i7-6700K (4 core, 8 thread) (廃止)	18.04.4 LTS 
+ 192.168.10.32    	voyager	A6000 48GB x 2台	256GB	Threadripper 3960X (24 core, 48 thread)	20.04.2 LTS 
+
+
+
+[* SHRDLUグループ]
+table:ファイルサーバ
+	IPアドレス	ホスト名	ディスク容量
+	192.168.10.60 	shrdlu	90TB
+table:GPUサーバ
+ IPアドレス	ホスト名	搭載GPU	メモリ容量	CPU情報	OSバージョン
+ 192.168.10.36	clova	A6000 48GB x 8台	512GB	EPYC 7752 (8 core, 16 thread) x 2	20.04.4 LTS
+ 192.168.10.37	bard	RTX 6000 Ada 48GB x 6台	512GB	EPYC 7313 (16 core, 32 thred) x 2	22.04.3 LTS
+ 192.168.10.28 	siri 	TITAN RTX 24GB x 2台	128GB  	Core i9-9900K (8 core, 16 thread)	24.04.1 LTS 
+ 192.168.10.29	blender	TITAN RTX 24GB x 2台	128GB 	Core i9-10900X (10 core, 20 thread)	24.04.1 LTS 
+ 192.168.10.34	romi	A6000 48GB x 2台	256GB	Threadripper 3960X (24 core, 48 thread)	24.04.3 LTS 
+ 192.168.10.35	pepper	A100 40GB x 4台	512GB	EPYC 7313P (16 core, 32 thread)	24.04.4 LTS 
+ 192.168.10.33	alexa	A100  80GB x 3台	512GB	Xeon Gold 6342  (24 core, 48 thread)	24.04.4 LTS
+
+[* NEDOグループ]
+table:GPUサーバ
+ IPアドレス	ホスト名	搭載GPU	メモリ容量	CPU情報	OSバージョン
+	192.168.10.30	jarvis	A100 80GB x 4台	メモリ512GB	Ryzen 9 7950X   (16 core, 32 thread)	20.04.4 LTS
+(ファイルサーバなし)
+
+[* Webサーバ]
+table:GPUサーバ
+ IPアドレス	ホスト名	搭載GPU	メモリ容量	CPU情報	OSバージョン
+	192.168.10.31	cotomo	GeForce RTX 4090	メモリ128GB	EPYC 7502P  (32 core, 64 thread)	22.04.5 LTS
+
+
+[* GPUの性能の目安]
+[RTX6000 Ada https://www.videocardbenchmark.net/gpu.php?gpu=RTX+6000+Ada+Generation&id=4768] > A100 > [A6000 https://www.videocardbenchmark.net/gpu.php?gpu=RTX+A6000&id=4337] > [TITAN RTX https://www.videocardbenchmark.net/gpu.php?gpu=TITAN+RTX&id=4029] > [1080Ti https://www.videocardbenchmark.net/gpu.php?gpu=GeForce+GTX+1080+Ti&id=3699] >  [TITAN X https://www.videocardbenchmark.net/gpu.php?gpu=NVIDIA+TITAN+X&id=3554]
+
+[* 無線LAN]
+	学生室無線LANアクセスポイント([電通大Proxy]の設定が必要．GPUサーバと同じLAN)
+		SSID：Buffalo-A(G)-53B8
+		pass：[/ ekkr5feh8etef]
+	ゼミ室用無線LAN (Proxyは不要だが研究室LANとは別のLAN．ローカルIPは192.168.20.***)
+		SSID：TP-Link_11C1
+		pass：85827769
+
+[* Proxyについて ]
+	ローカルIPが192.168.10.**のネットワークから外部にアクセスする場合は電通大のProxyサーバを経由する必要があります
+	詳しくは[電通大Proxy]
+	ゼミ室用無線LANは外部の人も接続することを想定し，Proxyが無いかわりにGPUサーバ群には直接アクセスできなくなっています
+
+[* GPUサーバ使用方法]
+	電通大VPN or 学内からのアクセスが必要です
+ 	ゼミ室からはローカルIPアドレスを使用して各サーバにSSH接続できます．
+ 	電通大VPNの場合
+ 		ELIZAグループ：130.153.158.3にSSH接続し，そこからさらにSSHで他のサーバに接続
+ 		SHRDLUグループ：130.153.158.3，ポート番号12456でSSH接続し，そこからSSHで他のサーバに接続
+	ELIZAグループの場合は自分のユーザ名のフォルダを「/export/users/」以下に，SHRDLUグループの場合は「/shrdlu/users」以下に作成し，プログラムなどのデータはそこに保存してください
+		ホームフォルダは容量が小さいです
+	ELIZAグループの場合
+ 	Windowsのエクスプローラに「\\130.153.158.3」と入れると，そのフォルダにWindows上からアクセスできます
+ 	macOSの場合，Finderの右上の「移動」＞「サーバに接続」を選択し，smb://130.153.158.3 を入力すればOK
+ 	/export/share/dataに研究用の共用データがあります
+ SHRDLUグループの場合
+ 	現状研究室内限定でWindowsエクスプローラに「\\192.168.10.60」と入れるとファイルサーバにアクセスできます
+
+[* 空いているGPUの確認方法]
+	各サーバは /export/public/nvidia-smi/ 以下に1分おきにnvidia-smiの結果を出力するようにcronで設定しています
+	出力ファイルの中身を一括表示するシェルスクリプトを用意したので，以下を実行するとGPUの状況が確認できます
+	 $ sh /export/public/nvidia-smi/show.sh
+	エイリアスを設定しておくと楽です
+		例：ホームディレクトリの「.bashrc」の末尾に以下を追記すると，gpushowコマンドでシェルスクリプトが実行できる
+			alias gpushow="sh /export/public/nvidia-smi/show.sh"
+
+[* パスワード無しでの接続（公開鍵認証の設定）]
+	公開鍵認証を設定しておくとVSCodeの接続時にパスワードを聞かれなくなる
+ 	手順
+ 		接続元のPCで鍵を作成
+ 			Windows Terminalの場合
+ 				$ ssh-keygen -t ed25519
+ 					プロンプトはすべて何も入力せずエンターを連打
+ 		.sshディレクトリ内に作成されたid_ed25519.pubをGPUサーバのホームディレクトリの./sshディレクトリに保存
+ 		以降はGPUサーバ上でコマンド実行
+ 			$ cd
+ 				ホームディレクトリへ移動
+ 			$ chmod 700 .ssh
+ 			$ cd .ssh
+ 			$ cat id_ed25519.pub >> authorized_keys
+ 			$ chmod 600 authorized_keys
+ 		接続元PCのターミナルから接続できるかを確認
+ 			$ ssh -i .ssh/id_ed25519 (ユーザ名)@(サーバのIPアドレス)
+ 			パスワードを聞かれずにログインできればOK．聞かれた場合は設定が間違っている
+ 		[VSCode]の設定
+ 			SSHのconfigファイルに以下例のように記述
+  			code:config
+  			 Host siri
+        HostName 192.168.10.28
+        User (ユーザ名)
+        PasswordAuthentication no
+        IdentityFile (id_ed25519ファイルのフルパス．例：C:\Users\inaba\.ssh\id_ed25519)
+        IdentitiesOnly yes
+
+[* 多段SSH]
+	VPNを介する場合など，VSCodeでGPUサーバに直接接続できない環境の場合は[多段SSH接続 https://qiita.com/ktokey/items/70882ecca1a21bb40b53]でelizaを踏み台にGPUサーバに接続するように設定する
+		code:設定例
+		 Host eliza
+           HostName 130.153.158.3
+           User (ユーザ名)
+   
+   Host alexa
+           HostName 192.168.10.33	
+           User (ユーザ名)
+           ProxyCommand  ssh -W %h:%p eliza
+           
+   Host pepper
+           HostName 192.168.10.35	
+           User (ユーザ名)
+           ProxyCommand  ssh -W %h:%p eliza
+
+
+[* アカウントの作成]
+	管理者(稲葉)に依頼してください
+	最初はユーザ名とパスワードは同一になっているので，以下のコマンドで[* 必ず]両方のパスワードを変更してください
+		ELIZAグループの場合はeliza上で，SHRDLUグループの場合がshrdlu上で実行すること
+		$ passwd
+			ログインパスワードの変更
+		$ smbpasswd
+			sambaのパスワードの変更
+
+[* 注意]
+	ファイルサーバでのプログラムの実行は避けてください
+	VSCodeでファイルサーバに接続すると，VSCodeの設定ファイルやhuggingfaceなどのキャッシュファイルで容量を圧迫し，動作が不安定になる可能性があるため，VSCodeで接続するのはGPUサーバだけにしてください．
+		GPUサーバに直接接続できない環境の場合は[多段SSH接続 https://qiita.com/ktokey/items/70882ecca1a21bb40b53]でelizaを踏み台にGPUサーバに接続するように設定すること
+	GPUサーバにログインしたらtopコマンドとnvidia-smiコマンドで使用状況を確認し，余裕があることを確認しましょう
+

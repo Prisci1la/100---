@@ -40,3 +40,9 @@ def main():  # 主函数 / メイン関数
 if __name__ == "__main__":  # 直接运行 / 直接実行
     main()  # 调用主函数 / メイン関数を呼ぶ
 
+
+# AIX実行結果メモ (2026-07-18, log: ~/100knock/logs/ch13_knock93.log)
+# test set size: 1160; translation progress reached 1160/1160 in about 03:32.
+# test BLEU: 2.22
+# predictions saved to Chapter 13/outputs/test_predictions.txt.
+# BLEU is low, so this checkpoint should be treated as a baseline rather than a good MT model.

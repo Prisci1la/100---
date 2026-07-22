@@ -1,0 +1,10 @@
+[
+  {
+    "batch_size": 64,
+    "lr": 1e-05,
+    "optimizer": "adamw",
+    "loss": 10.02127503437601,
+    "dev_bleu": 0.0,
+    "checkpoint": "/data/student/u2630018/100knock/Chapter 14/checkpoints/knock97_rank7_trial0.pt"
+  }
+]

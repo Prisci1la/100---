@@ -43,3 +43,12 @@ def main():  # 主函数 / メイン関数
 if __name__ == "__main__":  # 直接运行 / 直接実行
     main()  # 调用主函数 / メイン関数を呼ぶ
 
+
+# AIX実行結果メモ (2026-07-19, log: ~/100knock/logs/ch14_knock94_limited.log)
+# limited evaluation used a reduced test subset to finish reliably.
+# limited beam BLEU:
+# beam=1 -> 1.6781618416538517
+# beam=2 -> 2.56100191090642
+# beam=5 -> 3.2662815026687344
+# beam=10 -> 3.985241806807347
+# outputs: Chapter 14/outputs/knock94_beam_bleu.json and knock94_beam_bleu.png.

@@ -84,3 +84,35 @@ model = AutoModelForCausalLM.from_pretrained("openai-community/gpt2-medium")
 python knock98.py --epochs 1 --batch-size 2 --gradient-accumulation-steps 8
 python knock99.py --epochs 1 --batch-size 1 --gradient-accumulation-steps 8
 ```
+
+## Multi-GPU on AIX
+
+`knock98.py` と `knock99.py` は `torchrun` で複数GPUに分散できる。
+
+```bash
+torchrun --nproc_per_node=8 knock98.py --epochs 1 --batch-size 2 --gradient-accumulation-steps 1
+torchrun --nproc_per_node=8 knock99.py --epochs 1 --batch-size 1 --gradient-accumulation-steps 1
+```
+
+4bit量子化ロード時は各プロセスが `LOCAL_RANK` のGPUを使う。
+
+## Legacy Torch on AIX
+
+AIXの標準環境が `torch==1.5.1` の場合、`peft` / `trl` / `bitsandbytes` は互換性問題で動かないことがある。
+`knock98.py` と `knock99.py` は `--legacy-torch auto` が既定なので、古いtorchでは手書きのPyTorch training loopへ自動的に切り替える。
+
+このfallbackでは4bit LoRAを使わず、既定ではGPT-2-mediumの最後のTransformer blockとLM headだけを学習する。
+
+```bash
+python -m torch.distributed.launch --nproc_per_node=8 --use_env knock98.py --epochs 1 --batch-size 2 --gradient-accumulation-steps 8
+python -m torch.distributed.launch --nproc_per_node=8 --use_env knock99.py --epochs 1 --batch-size 1 --gradient-accumulation-steps 8
+```
+
+軽く確認する場合。
+
+```bash
+python knock98.py --max-train-examples 128 --batch-size 2
+python knock99.py --max-train-examples 64 --batch-size 1
+```
+
+`--trainable all` は全パラメータを更新するが、AIX標準環境ではメモリと時間が大きく増える。

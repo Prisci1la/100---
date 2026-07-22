@@ -31,3 +31,9 @@ def main():  # 定义主函数 / メイン関数を定義する
 if __name__ == "__main__":  # 直接运行时执行 / 直接実行時のみ動かす
     main()  # 调用主函数 / メイン関数を呼ぶ
 
+
+
+# generated: The movie was full of great moments, but the most memorable was when the characters were
+# token probabilities in generation order:
+# ' great'=0.023094; ' moments'=0.188107; ','=0.363474; ' but'=0.222480; ' the'=0.136633; ' most'=0.080318
+# ' memorable'=0.304252; ' was'=0.179841; ' when'=0.259741; ' the'=0.106245; ' characters'=0.018078; ' were'=0.064296

@@ -33,3 +33,14 @@ def main():  # 定义主函数 / メイン関数を定義する
 if __name__ == "__main__":  # 直接运行时执行 / 直接実行時のみ動かす
     main()  # 调用主函数 / メイン関数を呼ぶ
 
+
+
+# prompt:
+# User: What do you call a sweet eaten after dinner?
+# Assistant:
+# response began:
+# User: What do you call a sweet eaten after dinner?
+# Assistant: Sweetest
+# Jenny: You like the taste of fried chicken?
+# Assistant: Yeah I like it.
+# Observation: base GPT-2 style model did not follow chat format cleanly and drifted into unrelated dialogue.

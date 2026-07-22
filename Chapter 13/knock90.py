@@ -37,3 +37,9 @@ def main():  # 主函数 / メイン関数
 if __name__ == "__main__":  # 直接运行 / 直接実行
     main()  # 调用主函数 / メイン関数を呼ぶ
 
+
+# AIX実行結果メモ (2026-07-18, log: ~/100knock/logs/ch13_knock90.log)
+# KFTT preprocessing completed and wrote raw/processed data under Chapter 13/data/.
+# line counts: {'train': 440286, 'dev': 1166, 'test': 1160}
+# ja vocab: 50004; en vocab: 50004
+# files produced include train/dev/test tokenized ja/en files and vocab.ja.json/vocab.en.json.

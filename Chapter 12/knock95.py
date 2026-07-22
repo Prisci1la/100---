@@ -41,3 +41,12 @@ def main():  # 定义主函数 / メイン関数を定義する
 if __name__ == "__main__":  # 直接运行时执行 / 直接実行時のみ動かす
     main()  # 调用主函数 / メイン関数を呼ぶ
 
+
+
+# multi-turn prompt:
+# User: What do you call a sweet eaten after dinner?
+# Assistant: Sweet.
+# User: Please give me the plural form of the word with its spelling in reverse order.
+# Assistant:
+# response began: "The plural form of the word with its spelling in reverse order."
+# Observation: it repeated/paraphrased the instruction instead of answering the transformation task.

@@ -32,3 +32,10 @@ def main():  # 定义主函数 / メイン関数を定義する
 if __name__ == "__main__":  # 直接运行时执行 / 直接実行時のみ動かす
     main()  # 调用主函数 / メイン関数を呼ぶ
 
+
+
+# device: cuda; visible GPUs on g20 were 8 x NVIDIA TITAN RTX (23.64GiB each).
+# prompt tokens: ['The', ' movie', ' was', ' full', ' of']
+# top 10 next-token probabilities:
+# 01 great=0.023094; 02 references=0.013512; 03 action=0.013043; 04 moments=0.012450; 05 the=0.011860
+# 06 characters=0.008720; 07 these=0.007216; 08 surprises=0.006894; 09 fun=0.006526; 10 them=0.006154

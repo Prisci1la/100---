@@ -28,3 +28,11 @@ def main():  # 定义主函数 / メイン関数を定義する
 if __name__ == "__main__":  # 直接运行时执行 / 直接実行時のみ動かす
     main()  # 调用主函数 / メイン関数を呼ぶ
 
+
+
+# device: cuda; model: openai-community/gpt2-medium.
+# PPL: 89.4542 "The movie was full of surprises"
+# PPL: 164.8894 "The movies were full of surprises"
+# PPL: 324.1090 "The movie were full of surprises"
+# PPL: 388.4485 "The movies was full of surprises"
+# Lower perplexity matched the grammatical singular sentence.

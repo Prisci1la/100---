@@ -81,3 +81,11 @@ def main():  # 定义主函数 / メイン関数を定義する
 if __name__ == "__main__":  # 直接运行时执行 / 直接実行時のみ動かす
     main()  # 调用主函数 / メイン関数を呼ぶ
 
+
+
+# device: cuda; train=67349, dev=872, batch_size=16.
+# progress: each epoch ran 4210 train batches, around 20-25 it/s after warm-up on TITAN RTX.
+# epoch 01: train_loss=0.420917, dev_accuracy=0.865826
+# epoch 02: train_loss=0.398262, dev_accuracy=0.869266
+# epoch 03: train_loss=0.393835, dev_accuracy=0.880734
+# Accuracy improved across all 3 epochs, final dev_accuracy=88.07%.

@@ -64,3 +64,8 @@ def main():  # 主函数 / メイン関数
 if __name__ == "__main__":  # 直接运行 / 直接実行
     main()  # 调用主函数 / メイン関数を呼ぶ
 
+
+# AIX実行結果メモ (2026-07-19, log: ~/100knock/logs/ch14_knock99_smoke_g24.log)
+# Flask app smoke test hit the local service and verified a result was returned.
+# smoke test: status_code=200, contains_result=True.
+# checkpoint used: Chapter 14/checkpoints/domain_adapted_mt_limited.pt.

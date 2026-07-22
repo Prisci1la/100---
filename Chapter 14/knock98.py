@@ -42,3 +42,9 @@ def main():  # 主函数 / メイン関数
 if __name__ == "__main__":  # 直接运行 / 直接実行
     main()  # 调用主函数 / メイン関数を呼ぶ
 
+
+# AIX実行結果メモ (2026-07-19, log: ~/100knock/logs/ch14_knock98_limited_g24.log)
+# domain adaptation limited run: 37 train batches.
+# progress excerpt: 37/37 completed in about 00:02, speed reached about 24.66 it/s at the end.
+# epoch 01: loss=4.315730.
+# checkpoint saved to Chapter 14/checkpoints/domain_adapted_mt_limited.pt.

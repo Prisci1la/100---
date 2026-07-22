@@ -33,3 +33,13 @@ def main():  # 定义主函数 / メイン関数を定義する
 if __name__ == "__main__":  # 直接运行时执行 / 直接実行時のみ動かす
     main()  # 调用主函数 / メイン関数を呼ぶ
 
+
+
+# device: cuda; model: openai-community/gpt2-medium; prompt: "The movie was full of"
+# temperature=0.7 outputs included:
+# - "The movie was full of moments ... but they were so important to the story ..."
+# - "The movie was full of them. But, most people were shocked to see this."
+# - "The movie was full of references to the movie \"Superman Returns\" ..."
+# temperature=1.0: "The movie was full of them, of the way the movie was made."
+# temperature=1.0 also produced a positive review-like continuation about "great moments".
+# temperature=1.3: "The movie was full of amazing action scenes ..." and more diverse but less stable continuations.

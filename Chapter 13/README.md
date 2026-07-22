@@ -48,6 +48,14 @@ python knock92.py --sentence "京都 は 美しい 。"
 python knock93.py --split test
 ```
 
+8 GPUで訓練する場合:
+
+```bash
+torchrun --nproc_per_node=8 knock91.py --epochs 5 --batch-size 64
+```
+
+`--batch-size` は1 GPUあたりの値なので、上の例では実効batch sizeは `64 x 8`。
+
 短い確認だけ行う場合:
 
 ```bash
