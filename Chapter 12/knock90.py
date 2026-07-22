@@ -7,7 +7,34 @@ knock90.py: 次単語予測 / 次単語予測
 
 import argparse  # 命令行参数解析库 / コマンドライン引数解析ライブラリ
 
-from chapter12_utils import MODEL_NAME, PROMPT, get_device, load_causal_lm, load_tokenizer, next_token_topk  # 导入共用工具 / 共通ツールを導入する
+import torch  # PyTorch / PyTorch
+from transformers import AutoModelForCausalLM, AutoTokenizer  # Transformers自动类 / Transformers自動クラス
+
+from chapter12_utils import MODEL_NAME, PROMPT, get_device  # 导入共用工具 / 共通ツールを導入する
+
+
+def load_tokenizer(model_name=MODEL_NAME):  # 读取tokenizer / tokenizerを読み込む
+    tokenizer = AutoTokenizer.from_pretrained(model_name)  # 从Hugging Face读取 / Hugging Faceから読む
+    if tokenizer.pad_token is None:  # GPT2默认没有PAD / GPT2は既定でPADを持たない
+        tokenizer.pad_token = tokenizer.eos_token  # 用EOS作为PAD / EOSをPADとして使う
+    return tokenizer  # 返回tokenizer / tokenizerを返す
+
+
+def load_causal_lm(model_name=MODEL_NAME, device=None):  # 读取因果语言模型 / 因果言語モデルを読み込む
+    model = AutoModelForCausalLM.from_pretrained(model_name)  # 读取模型 / モデルを読み込む
+    model.config.pad_token_id = model.config.eos_token_id  # 设置PAD ID / PAD IDを設定する
+    return model.to(device)  # 移动到设备 / デバイスへ移す
+
+
+def next_token_topk(tokenizer, model, prompt=PROMPT, top_k=10, device=None):  # 预测下一个token top-k / 次token top-kを予測する
+    encoding = tokenizer(prompt, return_tensors="pt").to(device)  # 编码prompt / promptを符号化する
+    with torch.no_grad():  # 不计算梯度 / 勾配を計算しない
+        logits = model(**encoding).logits[0, -1]  # 取最后位置logit / 最後位置のlogitを取る
+        probabilities = torch.softmax(logits, dim=-1)  # 转换为概率 / 確率へ変換する
+        top_probs, top_ids = torch.topk(probabilities, k=top_k)  # 取top-k / top-kを取る
+    tokens = [tokenizer.decode([token_id]) for token_id in encoding["input_ids"][0].tolist()]  # prompt token列 / prompt token列
+    predictions = [(tokenizer.decode([idx]).strip(), prob.item()) for idx, prob in zip(top_ids.tolist(), top_probs)]  # 文本化 / テキスト化
+    return tokens, predictions  # 返回prompt token和预测 / prompt tokenと予測を返す
 
 
 def main():  # 定义主函数 / メイン関数を定義する

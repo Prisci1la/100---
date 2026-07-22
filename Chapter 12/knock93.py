@@ -6,8 +6,32 @@ knock93.py: パープレキシティ / パープレキシティ
 '''
 
 import argparse  # 命令行参数解析库 / コマンドライン引数解析ライブラリ
+import math  # 数学函数 / 数学関数
 
-from chapter12_utils import MODEL_NAME, PPL_SENTENCES, get_device, load_causal_lm, load_tokenizer, sentence_perplexity  # 导入共用工具 / 共通ツールを導入する
+import torch  # PyTorch / PyTorch
+from transformers import AutoModelForCausalLM, AutoTokenizer  # Transformers自动类 / Transformers自動クラス
+
+from chapter12_utils import MODEL_NAME, PPL_SENTENCES, get_device  # 导入共用工具 / 共通ツールを導入する
+
+
+def load_tokenizer(model_name=MODEL_NAME):  # 读取tokenizer / tokenizerを読み込む
+    tokenizer = AutoTokenizer.from_pretrained(model_name)  # 从Hugging Face读取 / Hugging Faceから読む
+    if tokenizer.pad_token is None:  # GPT2默认没有PAD / GPT2は既定でPADを持たない
+        tokenizer.pad_token = tokenizer.eos_token  # 用EOS作为PAD / EOSをPADとして使う
+    return tokenizer  # 返回tokenizer / tokenizerを返す
+
+
+def load_causal_lm(model_name=MODEL_NAME, device=None):  # 读取因果语言模型 / 因果言語モデルを読み込む
+    model = AutoModelForCausalLM.from_pretrained(model_name)  # 读取模型 / モデルを読み込む
+    model.config.pad_token_id = model.config.eos_token_id  # 设置PAD ID / PAD IDを設定する
+    return model.to(device)  # 移动到设备 / デバイスへ移す
+
+
+def sentence_perplexity(tokenizer, model, sentence, device=None):  # 计算句子perplexity / 文のperplexityを計算する
+    encoding = tokenizer(sentence, return_tensors="pt").to(device)  # 编码句子 / 文を符号化する
+    with torch.no_grad():  # 不计算梯度 / 勾配を計算しない
+        loss = model(**encoding, labels=encoding["input_ids"]).loss  # 语言模型loss / 言語モデルloss
+    return math.exp(loss.item())  # perplexity = exp(loss)
 
 
 def main():  # 定义主函数 / メイン関数を定義する

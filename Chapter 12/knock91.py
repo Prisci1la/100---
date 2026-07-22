@@ -7,7 +7,37 @@ knock91.py: 続きのテキストの予測 / 続きのテキストの予測
 
 import argparse  # 命令行参数解析库 / コマンドライン引数解析ライブラリ
 
-from chapter12_utils import MODEL_NAME, PROMPT, get_device, generate_texts, load_causal_lm, load_tokenizer  # 导入共用工具 / 共通ツールを導入する
+import torch  # PyTorch / PyTorch
+from transformers import AutoModelForCausalLM, AutoTokenizer  # Transformers自动类 / Transformers自動クラス
+
+from chapter12_utils import MODEL_NAME, PROMPT, get_device  # 导入共用工具 / 共通ツールを導入する
+
+
+def load_tokenizer(model_name=MODEL_NAME):  # 读取tokenizer / tokenizerを読み込む
+    tokenizer = AutoTokenizer.from_pretrained(model_name)  # 从Hugging Face读取 / Hugging Faceから読む
+    if tokenizer.pad_token is None:  # GPT2默认没有PAD / GPT2は既定でPADを持たない
+        tokenizer.pad_token = tokenizer.eos_token  # 用EOS作为PAD / EOSをPADとして使う
+    return tokenizer  # 返回tokenizer / tokenizerを返す
+
+
+def load_causal_lm(model_name=MODEL_NAME, device=None):  # 读取因果语言模型 / 因果言語モデルを読み込む
+    model = AutoModelForCausalLM.from_pretrained(model_name)  # 读取模型 / モデルを読み込む
+    model.config.pad_token_id = model.config.eos_token_id  # 设置PAD ID / PAD IDを設定する
+    return model.to(device)  # 移动到设备 / デバイスへ移す
+
+
+def generate_texts(tokenizer, model, prompt=PROMPT, num_return_sequences=5, max_new_tokens=20, temperature=1.0, do_sample=True, device=None):  # 生成多个续写 / 複数の続きを生成する
+    encoding = tokenizer(prompt, return_tensors="pt").to(device)  # 编码prompt / promptを符号化する
+    with torch.no_grad():  # 不计算梯度 / 勾配を計算しない
+        outputs = model.generate(
+            **encoding,
+            max_new_tokens=max_new_tokens,
+            do_sample=do_sample,
+            temperature=temperature,
+            num_return_sequences=num_return_sequences,
+            pad_token_id=tokenizer.eos_token_id,
+        )
+    return [tokenizer.decode(ids, skip_special_tokens=True) for ids in outputs]  # 解码生成结果 / 生成結果を復号する
 
 
 def main():  # 定义主函数 / メイン関数を定義する

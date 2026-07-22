@@ -9,11 +9,116 @@ import argparse  # 命令行参数解析库 / コマンドライン引数解析�
 
 import torch  # PyTorch / PyTorch
 from torch.nn.parallel import DistributedDataParallel as DDP  # 分布式训练 / 分散学習
-from torch.utils.data import DataLoader  # 数据加载 / データ読み込み
+from torch.utils.data import DataLoader, Dataset  # 数据加载 / データ読み込み
 from torch.utils.data.distributed import DistributedSampler  # 分布式采样 / 分散サンプラー
 from tqdm.auto import tqdm  # 进度条 / 進捗バー
+from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig  # Transformers自动类 / Transformers自動クラス
 
-from chapter12_utils import DEFAULT_SFT_DIR, DEFAULT_TRAIN_PATH, LMTextDataset, MODEL_NAME, apply_lora, collate_lm_texts, count_trainable_parameters, get_local_rank, load_causal_lm, load_tokenizer, make_lm_rows, read_sst2_rows, set_trainable_parameters, should_use_legacy_torch, to_hf_dataset  # 导入共用工具 / 共通ツールを導入する
+from chapter12_utils import DEFAULT_SFT_DIR, DEFAULT_TRAIN_PATH, MODEL_NAME, apply_lora, get_local_rank, read_sst2_rows, should_use_legacy_torch, to_hf_dataset  # 导入共用工具 / 共通ツールを導入する
+
+
+def load_tokenizer(model_name=MODEL_NAME):  # 读取tokenizer / tokenizerを読み込む
+    tokenizer = AutoTokenizer.from_pretrained(model_name)  # 从Hugging Face读取 / Hugging Faceから読む
+    if tokenizer.pad_token is None:  # GPT2默认没有PAD / GPT2は既定でPADを持たない
+        tokenizer.pad_token = tokenizer.eos_token  # 用EOS作为PAD / EOSをPADとして使う
+    return tokenizer  # 返回tokenizer / tokenizerを返す
+
+
+def get_torch_dtype(dtype_name="float16"):  # 字符串转torch dtype / 文字列をtorch dtypeへ変換する
+    mapping = {"float16": torch.float16, "bfloat16": getattr(torch, "bfloat16", torch.float16), "float32": torch.float32}
+    return mapping[dtype_name]  # 返回dtype / dtypeを返す
+
+
+def build_4bit_config(compute_dtype="float16"):  # 构建4bit量化配置 / 4bit量子化設定を作る
+    return BitsAndBytesConfig(
+        load_in_4bit=True,
+        bnb_4bit_compute_dtype=get_torch_dtype(compute_dtype),
+        bnb_4bit_quant_type="nf4",
+        bnb_4bit_use_double_quant=True,
+    )
+
+
+def get_device_map():  # 量化模型设备配置 / 量子化モデルのデバイス配置
+    if torch.cuda.is_available() and "LOCAL_RANK" in __import__("os").environ:
+        return {"": get_local_rank()}
+    return "auto"
+
+
+def load_causal_lm(model_name=MODEL_NAME, device=None, load_in_4bit=False, compute_dtype="float16"):  # 读取因果语言模型 / 因果言語モデルを読み込む
+    if load_in_4bit:  # 4bit量化加载 / 4bit量子化で読む
+        model = AutoModelForCausalLM.from_pretrained(
+            model_name,
+            quantization_config=build_4bit_config(compute_dtype),
+            device_map=get_device_map(),
+        )
+    else:
+        model = AutoModelForCausalLM.from_pretrained(model_name)  # 普通加载 / 通常読み込み
+    model.config.pad_token_id = model.config.eos_token_id  # 设置PAD ID / PAD IDを設定する
+    if load_in_4bit:
+        return model  # device_map已经配置 / device_mapで配置済み
+    return model.to(device)  # 移动到设备 / デバイスへ移す
+
+
+def sentiment_prompt(text):  # 构造情感分析prompt / 感情分析promptを作る
+    return f"Review: {text}\nSentiment:"  # 返回prompt / promptを返す
+
+
+def label_text(label):  # 标签转文本 / ラベルをテキストへ変換する
+    return " positive" if int(label) == 1 else " negative"  # 1为positive / 1はpositive
+
+
+def make_lm_rows(rows):  # 构造SFT文本 / SFTテキストを作る
+    return [{"text": sentiment_prompt(row["text"]) + label_text(row["label"])} for row in rows]  # prompt加正确标签 / promptに正解ラベルを足す
+
+
+def masked_labels(input_ids, attention_mask):  # 为LM构造忽略padding的labels / LM用labelsを作る
+    labels = input_ids.clone()  # 复制输入ID / 入力IDをコピー
+    labels[attention_mask == 0] = -100  # padding不计loss / paddingをlossから除外
+    return labels  # 返回labels / labelsを返す
+
+
+class LMTextDataset(Dataset):  # 手写SFT用Dataset / 手書きSFT用Dataset
+    def __init__(self, rows, tokenizer, max_length=128):  # 初始化 / 初期化
+        self.rows = rows  # 保存文本行 / テキスト行を保存
+        self.tokenizer = tokenizer  # tokenizer / tokenizer
+        self.max_length = max_length  # 最大长度 / 最大長
+
+    def __len__(self):  # 样本数 / サンプル数
+        return len(self.rows)
+
+    def __getitem__(self, index):  # 取样本 / サンプルを取る
+        return self.tokenizer(self.rows[index]["text"], truncation=True, max_length=self.max_length)  # 编码 / 符号化
+
+
+def collate_lm_texts(examples, tokenizer):  # 手写SFT batch整理 / 手書きSFT batch整形
+    batch = tokenizer.pad(examples, return_tensors="pt")  # padding / paddingする
+    batch["labels"] = masked_labels(batch["input_ids"], batch["attention_mask"])  # 添加labels / labelsを足す
+    return batch  # 返回batch / batchを返す
+
+
+def set_trainable_parameters(model, mode="all"):  # 设置可训练范围 / 学習可能範囲を設定する
+    if mode == "all":  # 全参数训练 / 全パラメータ学習
+        for parameter in model.parameters():
+            parameter.requires_grad = True
+        return
+    for parameter in model.parameters():  # 先冻结 / まず凍結する
+        parameter.requires_grad = False
+    if mode == "head":  # 只训练LM head / LM headだけ学習
+        for parameter in model.lm_head.parameters():
+            parameter.requires_grad = True
+    elif mode == "last-block":  # 训练最后block和LM head / 最終blockとLM headを学習
+        for parameter in model.transformer.h[-1].parameters():
+            parameter.requires_grad = True
+        for parameter in model.lm_head.parameters():
+            parameter.requires_grad = True
+    else:
+        raise ValueError(f"unknown trainable mode: {mode}")  # 未知模式 / 未知モード
+
+
+def count_trainable_parameters(model):  # 统计可训练参数 / 学習可能パラメータを数える
+    trainable = sum(parameter.numel() for parameter in model.parameters() if parameter.requires_grad)  # 可训练数 / 学習可能数
+    total = sum(parameter.numel() for parameter in model.parameters())  # 总数 / 総数
+    return trainable, total  # 返回统计 / 統計を返す
 
 
 def tokenize_dataset(dataset, tokenizer):  # 对SFT数据tokenize / SFTデータをtokenizeする

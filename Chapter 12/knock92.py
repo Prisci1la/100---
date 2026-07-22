@@ -7,7 +7,43 @@ knock92.py: 予測されたテキストの確率を計算 / 予測されたテ�
 
 import argparse  # 命令行参数解析库 / コマンドライン引数解析ライブラリ
 
-from chapter12_utils import MODEL_NAME, PROMPT, generate_with_token_probabilities, get_device, load_causal_lm, load_tokenizer  # 导入共用工具 / 共通ツールを導入する
+import torch  # PyTorch / PyTorch
+from transformers import AutoModelForCausalLM, AutoTokenizer  # Transformers自动类 / Transformers自動クラス
+
+from chapter12_utils import MODEL_NAME, PROMPT, get_device  # 导入共用工具 / 共通ツールを導入する
+
+
+def load_tokenizer(model_name=MODEL_NAME):  # 读取tokenizer / tokenizerを読み込む
+    tokenizer = AutoTokenizer.from_pretrained(model_name)  # 从Hugging Face读取 / Hugging Faceから読む
+    if tokenizer.pad_token is None:  # GPT2默认没有PAD / GPT2は既定でPADを持たない
+        tokenizer.pad_token = tokenizer.eos_token  # 用EOS作为PAD / EOSをPADとして使う
+    return tokenizer  # 返回tokenizer / tokenizerを返す
+
+
+def load_causal_lm(model_name=MODEL_NAME, device=None):  # 读取因果语言模型 / 因果言語モデルを読み込む
+    model = AutoModelForCausalLM.from_pretrained(model_name)  # 读取模型 / モデルを読み込む
+    model.config.pad_token_id = model.config.eos_token_id  # 设置PAD ID / PAD IDを設定する
+    return model.to(device)  # 移动到设备 / デバイスへ移す
+
+
+def generate_with_token_probabilities(tokenizer, model, prompt=PROMPT, max_new_tokens=12, device=None):  # 生成并计算每token概率 / 生成し各token確率を計算する
+    encoding = tokenizer(prompt, return_tensors="pt").to(device)  # 编码prompt / promptを符号化する
+    with torch.no_grad():  # 不计算梯度 / 勾配を計算しない
+        generated = model.generate(
+            **encoding,
+            max_new_tokens=max_new_tokens,
+            do_sample=False,
+            return_dict_in_generate=True,
+            output_scores=True,
+            pad_token_id=tokenizer.eos_token_id,
+        )
+    prompt_length = encoding["input_ids"].size(1)  # prompt长度 / prompt長
+    new_ids = generated.sequences[0, prompt_length:]  # 生成token ID / 生成token ID
+    rows = []  # 结果 / 結果
+    for token_id, score in zip(new_ids.tolist(), generated.scores):  # 遍历生成token / 生成tokenを走査する
+        probability = torch.softmax(score[0], dim=-1)[token_id].item()  # 该token概率 / そのtokenの確率
+        rows.append((tokenizer.decode([token_id]), probability))  # 保存 / 保存
+    return tokenizer.decode(generated.sequences[0], skip_special_tokens=True), rows  # 返回文本和概率表 / テキストと確率表を返す
 
 
 def main():  # 定义主函数 / メイン関数を定義する

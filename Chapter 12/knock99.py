@@ -10,11 +10,138 @@ import argparse  # 命令行参数解析库 / コマンドライン引数解析�
 import torch  # PyTorch / PyTorch
 import torch.nn.functional as F  # 损失函数 / 損失関数
 from torch.nn.parallel import DistributedDataParallel as DDP  # 分布式训练 / 分散学習
-from torch.utils.data import DataLoader  # 数据加载 / データ読み込み
+from torch.utils.data import DataLoader, Dataset  # 数据加载 / データ読み込み
 from torch.utils.data.distributed import DistributedSampler  # 分布式采样 / 分散サンプラー
 from tqdm.auto import tqdm  # 进度条 / 進捗バー
+from transformers import AutoModelForCausalLM, AutoTokenizer  # Hugging Face模型 / Hugging Faceモデル
 
-from chapter12_utils import DEFAULT_DPO_DIR, DEFAULT_TRAIN_PATH, MODEL_NAME, PreferenceDataset, build_4bit_config, build_lora_config, collate_preferences, count_trainable_parameters, get_device_map, get_local_rank, load_causal_lm, load_tokenizer, make_preference_rows, read_sst2_rows, sequence_log_probability, set_trainable_parameters, should_use_legacy_torch, to_hf_dataset  # 导入共用工具 / 共通ツールを導入する
+from chapter12_utils import DEFAULT_DPO_DIR, DEFAULT_TRAIN_PATH, MODEL_NAME, build_4bit_config, build_lora_config, get_device_map, get_local_rank, read_sst2_rows, should_use_legacy_torch, to_hf_dataset  # 导入共用工具 / 共通ツールを導入する
+
+
+def load_tokenizer(model_name=MODEL_NAME):  # 读取tokenizer / tokenizerを読み込む
+    tokenizer = AutoTokenizer.from_pretrained(model_name)  # 从Hugging Face读取 / Hugging Faceから読む
+    if tokenizer.pad_token is None:  # GPT-2没有pad token / GPT-2にはpad tokenがない
+        tokenizer.pad_token = tokenizer.eos_token  # 用eos代替pad / eosをpadとして使う
+    tokenizer.padding_side = "left"  # 生成任务左padding / 生成では左padding
+    return tokenizer  # 返回tokenizer / tokenizerを返す
+
+
+def load_causal_lm(model_name=MODEL_NAME, device=None, load_in_4bit=False, compute_dtype="float16"):  # 读取因果语言模型 / 因果言語モデルを読み込む
+    if load_in_4bit:  # QLoRA用4bit加载 / QLoRA用4bit読み込み
+        model = AutoModelForCausalLM.from_pretrained(
+            model_name,
+            quantization_config=build_4bit_config(compute_dtype),
+            device_map=get_device_map(),
+        )
+    else:
+        model = AutoModelForCausalLM.from_pretrained(model_name)  # 普通加载 / 通常読み込み
+    model.config.pad_token_id = model.config.eos_token_id  # 设置pad token / pad tokenを設定する
+    if load_in_4bit:  # device_map已经决定放置位置 / device_mapで配置済み
+        return model
+    return model.to(device)  # 移动到设备 / デバイスへ移す
+
+
+def sentiment_prompt(text):  # 构造情感分析prompt / 感情分析promptを作る
+    return f"Review: {text}\nSentiment:"  # 返回prompt / promptを返す
+
+
+def label_text(label):  # 标签转文本 / ラベルをテキストへ変換する
+    return " positive" if int(label) == 1 else " negative"  # 1为positive / 1はpositive
+
+
+def make_preference_rows(rows):  # 构造DPO偏好数据 / DPO選好データを作る
+    items = []  # 结果列表 / 結果リスト
+    for row in rows:  # 遍历SST-2样本 / SST-2サンプルを走査
+        correct = label_text(row["label"]).strip()  # 正确标签文本 / 正解ラベル
+        wrong = "negative" if row["label"] == 1 else "positive"  # 错误标签文本 / 不正解ラベル
+        items.append({"prompt": sentiment_prompt(row["text"]), "chosen": f" {correct}", "rejected": f" {wrong}"})  # 添加偏好样本 / 選好サンプルを追加
+    return items  # 返回偏好样本 / 選好サンプルを返す
+
+
+class PreferenceDataset(Dataset):  # 手写DPO用Dataset / 手書きDPO用Dataset
+    def __init__(self, rows, tokenizer, max_length=256):  # 初始化 / 初期化
+        self.rows = rows  # 保存偏好样本 / 選好サンプルを保存
+        self.tokenizer = tokenizer  # tokenizer / tokenizer
+        self.max_length = max_length  # 最大长度 / 最大長
+
+    def __len__(self):  # 样本数 / サンプル数
+        return len(self.rows)
+
+    def _encode_pair(self, prompt, answer):  # 编码prompt+answer并标出answer位置 / prompt+answerを符号化し応答位置を印付け
+        prompt_ids = self.tokenizer(prompt, add_special_tokens=False).input_ids  # prompt ID / prompt ID
+        answer_ids = self.tokenizer(answer, add_special_tokens=False).input_ids  # answer ID / answer ID
+        input_ids = (prompt_ids + answer_ids)[: self.max_length]  # 截断 / 切り詰め
+        answer_start = min(len(prompt_ids), len(input_ids))  # answer起点 / 応答開始位置
+        loss_mask = [0] * len(input_ids)  # mask初始化 / mask初期化
+        for idx in range(answer_start, len(input_ids)):  # 只训练answer token / 応答tokenだけ見る
+            loss_mask[idx] = 1
+        return {"input_ids": input_ids, "attention_mask": [1] * len(input_ids), "loss_mask": loss_mask}  # 返回编码 / 符号化を返す
+
+    def __getitem__(self, index):  # 取样本 / サンプルを取る
+        row = self.rows[index]  # 取行 / 行を取る
+        return {
+            "chosen": self._encode_pair(row["prompt"], row["chosen"]),
+            "rejected": self._encode_pair(row["prompt"], row["rejected"]),
+        }
+
+
+def _pad_encoded_items(items, tokenizer):  # padding编码样本 / 符号化サンプルをpaddingする
+    max_len = max(len(item["input_ids"]) for item in items)  # 最大长度 / 最大長
+    pad_id = tokenizer.pad_token_id  # pad ID / pad ID
+    input_ids, attention_mask, loss_mask = [], [], []  # 初始化列表 / リスト初期化
+    for item in items:  # 遍历样本 / サンプルを走査
+        pad_len = max_len - len(item["input_ids"])  # padding长度 / padding長
+        input_ids.append(item["input_ids"] + [pad_id] * pad_len)  # 补input / inputを補う
+        attention_mask.append(item["attention_mask"] + [0] * pad_len)  # 补attention / attentionを補う
+        loss_mask.append(item["loss_mask"] + [0] * pad_len)  # 补loss mask / loss maskを補う
+    return {
+        "input_ids": torch.tensor(input_ids, dtype=torch.long),
+        "attention_mask": torch.tensor(attention_mask, dtype=torch.long),
+        "loss_mask": torch.tensor(loss_mask, dtype=torch.float),
+    }
+
+
+def collate_preferences(examples, tokenizer):  # 手写DPO batch整理 / 手書きDPO batch整形
+    return {
+        "chosen": _pad_encoded_items([example["chosen"] for example in examples], tokenizer),
+        "rejected": _pad_encoded_items([example["rejected"] for example in examples], tokenizer),
+    }
+
+
+def sequence_log_probability(model, batch):  # 计算answer token平均log概率 / 応答token平均log確率を計算する
+    outputs = model(input_ids=batch["input_ids"], attention_mask=batch["attention_mask"])  # 前向 / 順伝播
+    logits = outputs.logits[:, :-1, :]  # 下一个token预测 / 次token予測
+    labels = batch["input_ids"][:, 1:]  # 目标token / 目標token
+    mask = batch["loss_mask"][:, 1:] * batch["attention_mask"][:, 1:].float()  # answer mask / 応答mask
+    log_probs = torch.log_softmax(logits, dim=-1)  # log概率 / log確率
+    token_log_probs = log_probs.gather(-1, labels.unsqueeze(-1)).squeeze(-1)  # 目标log概率 / 目標log確率
+    lengths = mask.sum(dim=1).clamp(min=1.0)  # answer长度 / 応答長
+    return (token_log_probs * mask).sum(dim=1) / lengths  # 平均log概率 / 平均log確率
+
+
+def set_trainable_parameters(model, mode="all"):  # 设置可训练范围 / 学習可能範囲を設定する
+    if mode == "all":  # 全参数训练 / 全パラメータ学習
+        for parameter in model.parameters():
+            parameter.requires_grad = True
+        return
+    for parameter in model.parameters():  # 先冻结 / まず凍結する
+        parameter.requires_grad = False
+    if mode == "head":  # 只训练LM head / LM headだけ学習
+        for parameter in model.lm_head.parameters():
+            parameter.requires_grad = True
+    elif mode == "last-block":  # 训练最后block和LM head / 最終blockとLM headを学習
+        for parameter in model.transformer.h[-1].parameters():
+            parameter.requires_grad = True
+        for parameter in model.lm_head.parameters():
+            parameter.requires_grad = True
+    else:
+        raise ValueError(f"unknown trainable mode: {mode}")  # 未知模式 / 未知モード
+
+
+def count_trainable_parameters(model):  # 统计可训练参数 / 学習可能パラメータを数える
+    trainable = sum(parameter.numel() for parameter in model.parameters() if parameter.requires_grad)  # 可训练数 / 学習可能数
+    total = sum(parameter.numel() for parameter in model.parameters())  # 总数 / 総数
+    return trainable, total  # 返回统计 / 統計を返す
 
 
 def add_bool_pair(parser, name, default, help_text):  # Python 3.7兼容的布尔参数 / Python 3.7互換の真偽引数

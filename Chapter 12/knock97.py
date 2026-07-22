@@ -8,21 +8,72 @@ GPT2の文ベクトルを固定特徴量として、線形分類器でSST-2極�
 import argparse  # 命令行参数解析库 / コマンドライン引数解析ライブラリ
 
 import torch  # 导入PyTorch / PyTorchを導入する
-from torch.utils.data import DataLoader  # DataLoaderを導入する / DataLoaderを導入する
+from torch import nn  # 神经网络模块 / ニューラルネットワーク
+from torch.utils.data import DataLoader, Dataset  # DataLoaderを導入する / DataLoaderを導入する
 from tqdm.auto import tqdm  # 进度条 / 進捗バー
+from transformers import AutoModel, AutoTokenizer  # Transformers自动类 / Transformers自動クラス
 
 from chapter12_utils import (  # 导入共用工具 / 共通ツールを導入する
     DEFAULT_DEV_PATH,
     DEFAULT_TRAIN_PATH,
-    GPT2EmbeddingClassifier,
-    GPT2EmbeddingDataset,
     MODEL_NAME,
-    collate_gpt2_classifier,
     get_device,
-    load_encoder,
-    load_tokenizer,
     read_sst2_rows,
 )
+
+
+def load_tokenizer(model_name=MODEL_NAME):  # 读取tokenizer / tokenizerを読み込む
+    tokenizer = AutoTokenizer.from_pretrained(model_name)  # 从Hugging Face读取 / Hugging Faceから読む
+    if tokenizer.pad_token is None:  # GPT2默认没有PAD / GPT2は既定でPADを持たない
+        tokenizer.pad_token = tokenizer.eos_token  # 用EOS作为PAD / EOSをPADとして使う
+    return tokenizer  # 返回tokenizer / tokenizerを返す
+
+
+def load_encoder(model_name=MODEL_NAME, device=None):  # 读取GPT2主体 / GPT2本体を読む
+    model = AutoModel.from_pretrained(model_name)  # 读取无LM头模型 / LMヘッドなしモデルを読む
+    return model.to(device)  # 移动到设备 / デバイスへ移す
+
+
+class GPT2EmbeddingDataset(Dataset):  # GPT2埋め込み分類用Dataset / GPT2埋め込み分類用Dataset
+    def __init__(self, rows, tokenizer, max_length=128):  # 初始化Dataset / Datasetを初期化する
+        self.rows = rows  # 保存样本 / サンプルを保存する
+        self.tokenizer = tokenizer  # 保存tokenizer / tokenizerを保存する
+        self.max_length = max_length  # 最大长度 / 最大長
+
+    def __len__(self):  # 样本数 / サンプル数
+        return len(self.rows)
+
+    def __getitem__(self, index):  # 取一个样本 / 1サンプルを取る
+        row = self.rows[index]  # 取行 / 行を取る
+        enc = self.tokenizer(row["text"], truncation=True, max_length=self.max_length)  # 编码文本 / テキストを符号化する
+        enc["labels"] = row["label"]  # 添加标签 / ラベルを追加する
+        return enc  # 返回样本 / サンプルを返す
+
+
+def collate_gpt2_classifier(examples, tokenizer):  # 分类任务batch整理 / 分類タスクbatchを整える
+    features = [{"input_ids": e["input_ids"], "attention_mask": e["attention_mask"]} for e in examples]  # 取输入特征 / 入力特徴を取る
+    batch = tokenizer.pad(features, return_tensors="pt")  # padding / paddingする
+    batch["labels"] = torch.tensor([e["labels"] for e in examples], dtype=torch.long)  # 标签tensor / ラベルtensor
+    return batch  # 返回batch / batchを返す
+
+
+class GPT2EmbeddingClassifier(nn.Module):  # GPT2埋め込み+線形分類器 / GPT2埋め込み+線形分類器
+    def __init__(self, encoder, hidden_size):  # 初始化模型 / モデルを初期化する
+        super().__init__()  # 父类初始化 / 親クラス初期化
+        self.encoder = encoder  # GPT2主体 / GPT2本体
+        self.classifier = nn.Linear(hidden_size, 2)  # 线性分类层 / 線形分類層
+        for parameter in self.encoder.parameters():  # 固定GPT2 / GPT2を固定する
+            parameter.requires_grad = False
+
+    def forward(self, input_ids, attention_mask, labels=None):  # 前向计算 / 順伝播
+        with torch.no_grad():  # 固定encoder不求梯度 / encoderは勾配なし
+            outputs = self.encoder(input_ids=input_ids, attention_mask=attention_mask)  # 运行GPT2 / GPT2を実行する
+        hidden = outputs.last_hidden_state  # token向量 / tokenベクトル
+        lengths = attention_mask.sum(dim=1).clamp(min=1) - 1  # 最后有效token位置 / 最後の有効token位置
+        pooled = hidden[torch.arange(hidden.size(0), device=hidden.device), lengths]  # 取最后有效token向量 / 最後の有効tokenベクトル
+        logits = self.classifier(pooled)  # 分类logits / 分類logits
+        loss = nn.CrossEntropyLoss()(logits, labels) if labels is not None else None  # loss / loss
+        return loss, logits  # 返回loss和logits / lossとlogitsを返す
 
 
 def evaluate(model, loader, device):  # 评价分类器 / 分類器を評価する

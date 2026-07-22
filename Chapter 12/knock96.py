@@ -7,9 +7,47 @@ knock96.py: プロンプトによる感情分析 / プロンプトによる感�
 
 import argparse  # 命令行参数解析库 / コマンドライン引数解析ライブラリ
 
+import torch  # PyTorch / PyTorch
 from tqdm.auto import tqdm  # 导入进度条 / 進捗バーを導入する
+from transformers import AutoModelForCausalLM, AutoTokenizer  # Transformers自动类 / Transformers自動クラス
 
-from chapter12_utils import DEFAULT_DEV_PATH, MODEL_NAME, get_device, load_causal_lm, load_tokenizer, prompt_sentiment_predict, read_sst2_rows  # 导入共用工具 / 共通ツールを導入する
+from chapter12_utils import DEFAULT_DEV_PATH, MODEL_NAME, get_device, read_sst2_rows  # 导入共用工具 / 共通ツールを導入する
+
+
+def load_tokenizer(model_name=MODEL_NAME):  # 读取tokenizer / tokenizerを読み込む
+    tokenizer = AutoTokenizer.from_pretrained(model_name)  # 从Hugging Face读取 / Hugging Faceから読む
+    if tokenizer.pad_token is None:  # GPT2默认没有PAD / GPT2は既定でPADを持たない
+        tokenizer.pad_token = tokenizer.eos_token  # 用EOS作为PAD / EOSをPADとして使う
+    return tokenizer  # 返回tokenizer / tokenizerを返す
+
+
+def load_causal_lm(model_name=MODEL_NAME, device=None):  # 读取因果语言模型 / 因果言語モデルを読み込む
+    model = AutoModelForCausalLM.from_pretrained(model_name)  # 读取模型 / モデルを読み込む
+    model.config.pad_token_id = model.config.eos_token_id  # 设置PAD ID / PAD IDを設定する
+    return model.to(device)  # 移动到设备 / デバイスへ移す
+
+
+def sentiment_prompt(text):  # 构造情感分析prompt / 感情分析promptを作る
+    return f"Review: {text}\nSentiment:"  # 返回prompt / promptを返す
+
+
+def continuation_log_probability(tokenizer, model, prompt, continuation, device=None):  # 计算续写log概率 / 続きのlog確率を計算する
+    full_text = prompt + continuation  # prompt和候选标签合并 / promptと候補ラベルを結合
+    full_ids = tokenizer(full_text, return_tensors="pt").input_ids.to(device)  # 编码全文 / 全文を符号化
+    prompt_len = tokenizer(prompt, return_tensors="pt").input_ids.size(1)  # prompt token数 / prompt token数
+    with torch.no_grad():  # 不计算梯度 / 勾配なし
+        logits = model(full_ids).logits[:, :-1, :]  # 下一个token预测logits / 次token予測logits
+        target = full_ids[:, 1:]  # 目标token / 目標token
+        log_probs = torch.log_softmax(logits, dim=-1).gather(-1, target.unsqueeze(-1)).squeeze(-1)  # 目标token log概率 / 目標token log確率
+    start = max(prompt_len - 1, 0)  # continuation起点 / continuation開始位置
+    return log_probs[0, start:].sum().item()  # 返回续写log概率总和 / 続きのlog確率合計
+
+
+def prompt_sentiment_predict(tokenizer, model, text, device=None):  # 用prompt预测情感 / promptで感情を予測する
+    prompt = sentiment_prompt(text)  # 构造prompt / promptを作る
+    neg_score = continuation_log_probability(tokenizer, model, prompt, " negative", device=device)  # negative得分 / negativeスコア
+    pos_score = continuation_log_probability(tokenizer, model, prompt, " positive", device=device)  # positive得分 / positiveスコア
+    return 1 if pos_score > neg_score else 0, neg_score, pos_score  # 返回预测和分数 / 予測とスコアを返す
 
 
 def main():  # 定义主函数 / メイン関数を定義する
