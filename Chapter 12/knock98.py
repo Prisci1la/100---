@@ -261,8 +261,26 @@ if __name__ == "__main__":  # 直接运行时执行 / 直接実行時のみ動�
 
 
 
+# device: auto, train: 1000, epochs: 1.0, batch_size: 2, grad_accum: 8
+# trainable params: LoRA adapters only; GPT2-medium was loaded with 4bit quantization.
+# SFT text format used problem 96 prompt plus the correct label response:
+# 01. Review: hide new secretions from the parental units
+#     Sentiment: negative
+# 02. Review: contains no wit , only labored gags
+#     Sentiment: negative
+# 03. Review: that loves its characters and communicates something rather beautiful about human nature
+#     Sentiment: positive
+# 04. Review: remains utterly satisfied to remain the same throughout
+#     Sentiment: negative
+# 05. Review: demonstrates that the director of such hollywood blockbusters as patriot games can still turn out a small , personal film with an emotional wallop .
+#     Sentiment: positive
 # first attempt: legacy 8-GPU DDP failed before completion.
 # error: RuntimeError: Unsupported data type for NCCL process group.
 # fallback: single-process SFT run completed successfully.
-# progress excerpt: epoch 1 reached 1000/1000 in about 01:03, speed about 15.76 it/s, final displayed loss around 2.37, step=125.
+# train progress excerpt:
+#   10/1000  loss about 3.60
+#  100/1000  loss about 2.70
+#  500/1000  loss about 2.45
+# 1000/1000  final displayed loss around 2.37
+# epoch 1 reached 1000/1000 in about 01:03, speed about 15.76 it/s, final step=125 after gradient accumulation.
 # model saved to Chapter 12/models/sft_sentiment_gpt2.
