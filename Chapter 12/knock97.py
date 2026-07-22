@@ -90,6 +90,21 @@ def evaluate(model, loader, device):  # 评价分类器 / 分類器を評価す�
     return correct / max(total, 1)  # 返回正解率 / 正解率を返す
 
 
+def preview_predictions(model, rows, tokenizer, device, max_examples=10):  # 预测少量样本 / 少数サンプルを予測する
+    model.eval()  # 切换评价模式 / 評価モードに切り替える
+    label_names = {0: "negative", 1: "positive"}  # 标签名 / ラベル名
+    preview_rows = rows[:max_examples]  # 取前几个样本 / 先頭サンプルを取る
+    with torch.no_grad():  # 不计算梯度 / 勾配なし
+        for row in preview_rows:  # 遍历样本 / サンプルを走査する
+            encoded = tokenizer(row["text"], return_tensors="pt", truncation=True, max_length=128)  # 编码文本 / テキストを符号化する
+            encoded = {key: value.to(device) for key, value in encoded.items()}  # 移动到设备 / デバイスへ移す
+            _loss, logits = model(**encoded)  # 得到分类logits / 分類logitsを得る
+            pred = int(logits.argmax(dim=-1).item())  # 预测标签 / 予測ラベル
+            gold = int(row["label"])  # 正解标签 / 正解ラベル
+            text = row["text"][:80].replace("\t", " ")  # 截断显示 / 表示用に切り詰める
+            print(f"gold={label_names[gold]:8s}\tpred={label_names[pred]:8s}\t{text}")  # 输出预测 / 予測を出力する
+
+
 def main():  # 定义主函数 / メイン関数を定義する
     parser = argparse.ArgumentParser(description="knock97: GPT2 embedding classifier")  # 创建参数解析器 / 引数パーサーを作る
     parser.add_argument("--model-name", default=MODEL_NAME, help="Hugging Face model name")  # 模型名 / モデル名
@@ -127,6 +142,8 @@ def main():  # 定义主函数 / メイン関数を定義する
             total_loss += loss.item()  # 累加loss / lossを加算する
         accuracy = evaluate(model, dev_loader, device)  # 评价 / 評価する
         print(f"epoch {epoch:02d}: train_loss={total_loss / max(len(train_loader), 1):.6f}, dev_accuracy={accuracy:.6f}")  # 输出进度 / 進捗を出力する
+    print("\nPrediction preview on 10 dev examples:")  # 输出预测示例标题 / 予測例の見出しを出力する
+    preview_predictions(model, dev_rows, tokenizer, device)  # 输出少量预测 / 少数の予測を出力する
 
 
 if __name__ == "__main__":  # 直接运行时执行 / 直接実行時のみ動かす
@@ -140,3 +157,14 @@ if __name__ == "__main__":  # 直接运行时执行 / 直接実行時のみ動�
 # epoch 02: train_loss=0.398262, dev_accuracy=0.869266
 # epoch 03: train_loss=0.393835, dev_accuracy=0.880734
 # Accuracy improved across all 3 epochs, final dev_accuracy=88.07%.
+# Prediction preview on 10 dev examples:
+# gold=positive    pred=positive    it 's a charming and often affecting journey .
+# gold=negative    pred=negative    unflinchingly bleak and desperate
+# gold=positive    pred=positive    allows us to hope that nolan is poised to embark a major career as a commercial y
+# gold=positive    pred=positive    the acting , costumes , music , cinematography and sound are all astounding given
+# gold=negative    pred=negative    it 's slow -- very , very slow .
+# gold=negative    pred=negative    although laced with humor and a few fanciful touches , the film is a refreshingly 
+# gold=positive    pred=positive    a sometimes tedious film .
+# gold=positive    pred=positive    or doing last year 's taxes with your ex-wife .
+# gold=negative    pred=negative    you do n't have to know about music to appreciate the film 's easygoing blend of c
+# gold=positive    pred=positive    in exactly 89 minutes , most of which passed as slowly as if i 'd been sitting nak
