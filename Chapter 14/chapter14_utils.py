@@ -13,6 +13,7 @@ import sys  # import路径处理 / importパス処理
 import tempfile  # 临时目录工具 / 一時ディレクトリ用
 from pathlib import Path  # 路径处理 / パス処理
 
+import sacrebleu  # BLEU计算库 / BLEU計算ライブラリ
 import torch  # PyTorch / PyTorch
 from torch.nn import functional as F  # 函数式API / 関数型API
 from tqdm.auto import tqdm  # 进度条 / 進捗バー
@@ -23,35 +24,33 @@ CHAPTER13_DIR = BASE_DIR.parent / "Chapter 13"  # Chapter 13目录 / Chapter 13�
 if str(CHAPTER13_DIR) not in sys.path:  # 如果未加入import路径 / importパス未追加なら
     sys.path.append(str(CHAPTER13_DIR))  # 加入import路径 / importパスへ追加する
 
-from chapter13_utils import (  # noqa: E402  # 导入第13回工具 / 第13回ツールを導入する
-    BOS,
-    CHECKPOINT_DIR as CH13_CHECKPOINT_DIR,
-    EOS,
-    OUTPUT_DIR as CH13_OUTPUT_DIR,
-    PROCESSED_DIR as CH13_PROCESSED_DIR,
-    TransformerMT,
-    build_vocab,
-    cleanup_distributed,
-    collate_translation,
-    corpus_bleu,
-    create_padding_mask,
-    decode,
-    encode,
-    get_device,
-    get_ja_tagger,
-    greedy_decode,
-    is_main_process,
-    load_checkpoint,
-    load_token_lines,
-    load_vocab,
-    save_checkpoint,
-    save_vocab,
-    setup_distributed,
-    tokenize_en,
-    tokenize_ja,
-    train_epoch,
-    TranslationDataset,
+from knock90 import (  # noqa: E402  # 第13回数据处理函数 / 第13回データ処理関数
+    build_vocab,  # 构建词表 / 語彙を構築する
+    get_ja_tagger,  # 创建日语分词器 / 日本語分かち書き器を作る
+    save_vocab,  # 保存词表 / 語彙を保存する
+    tokenize_en,  # 英语分词 / 英語を分かち書きする
+    tokenize_ja,  # 日语分词 / 日本語を分かち書きする
 )
+from knock91 import (  # noqa: E402  # 第13回模型和训练函数 / 第13回のモデル・学習関数
+    BOS,  # 开始token / 開始token
+    CHECKPOINT_DIR as CH13_CHECKPOINT_DIR,  # 第13回checkpoint目录 / 第13回checkpointディレクトリ
+    EOS,  # 结束token / 終了token
+    PROCESSED_DIR as CH13_PROCESSED_DIR,  # 第13回处理后数据目录 / 第13回前処理済みデータ
+    TransformerMT,  # Transformer翻译模型 / Transformer翻訳model
+    TranslationDataset,  # 翻译数据集 / 翻訳dataset
+    cleanup_distributed,  # 关闭分布式环境 / 分散環境を閉じる
+    collate_translation,  # 对batch做padding / batchをpaddingする
+    create_padding_mask,  # 创建padding mask / padding maskを作る
+    encode,  # token列转ID列 / token列をID列へ変換する
+    get_device,  # 获取计算设备 / 計算deviceを取得する
+    is_main_process,  # 判断主进程 / 主processか判定する
+    load_token_lines,  # 读取token文件 / tokenファイルを読む
+    load_vocab,  # 读取词表 / 語彙を読む
+    save_checkpoint,  # 保存checkpoint / checkpointを保存する
+    setup_distributed,  # 初始化分布式环境 / 分散環境を初期化する
+    train_epoch,  # 训练一个epoch / 1epoch学習する
+)
+from knock92 import decode, load_checkpoint  # noqa: E402  # 第13回推論函数 / 第13回推論関数
 
 
 OUTPUT_DIR = BASE_DIR / "outputs"  # 输出目录 / 出力ディレクトリ
@@ -59,6 +58,10 @@ DATA_DIR = BASE_DIR / "data"  # 数据目录 / データディレクトリ
 SERVER_DIR = BASE_DIR / "server"  # server目录 / serverディレクトリ
 CHECKPOINT_DIR = BASE_DIR / "checkpoints"  # 第14回输出模型目录 / 第14回の出力モデルディレクトリ
 BASE_CHECKPOINT = CH13_CHECKPOINT_DIR / "transformer_mt.pt"  # 第13回训练好的基础模型 / 第13回で学習した基礎モデル
+
+
+def corpus_bleu(predictions, references):  # 计算BLEU / BLEUを計算する
+    return sacrebleu.corpus_bleu(predictions, [references]).score  # 返回corpus BLEU分数 / corpus BLEU scoreを返す
 
 
 def beam_search_decode(model, src, src_vocab, tgt_vocab, beam_size=5, max_len=80, device=None):  # ビーム探索でdecode / ビーム探索でdecodeする
@@ -113,13 +116,13 @@ def train_sentencepiece(input_path, model_prefix, vocab_size=8000, character_cov
         temp_prefix = temp_dir / model_prefix.name  # ASCII临时prefix / ASCII一時prefix
         shutil.copyfile(input_path, temp_input)  # 复制语料 / コーパスをコピーする
         spm.SentencePieceTrainer.train(  # 训练SP模型 / SPモデルを学習する
-            input=str(temp_input),
-            model_prefix=str(temp_prefix),
-            vocab_size=vocab_size,
-            character_coverage=character_coverage,
-            model_type="unigram",
-            normalization_rule_name="identity",
-            hard_vocab_limit=False,
+            input=str(temp_input),  # 指定训练语料 / 学習corpusを指定する
+            model_prefix=str(temp_prefix),  # 指定临时输出前缀 / 一時出力prefixを指定する
+            vocab_size=vocab_size,  # 指定词表大小 / 語彙sizeを指定する
+            character_coverage=character_coverage,  # 指定字符覆盖率 / 文字coverageを指定する
+            model_type="unigram",  # 使用unigram模型 / unigram modelを使う
+            normalization_rule_name="identity",  # 保留原始字符 / 元の文字を保持する
+            hard_vocab_limit=False,  # 允许实际词表略小 / 実際の語彙が少し小さくても許可する
         )
         shutil.copyfile(temp_prefix.with_suffix(".model"), target_model)  # 复制模型 / モデルをコピーする
         shutil.copyfile(temp_prefix.with_suffix(".vocab"), target_vocab)  # 复制词表 / 語彙をコピーする
